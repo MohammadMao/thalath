@@ -39,12 +39,33 @@ dependencies:
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.2
   cloud_firestore: ^5.2.0
+
+  # code generation (with cubit & retrofit)
+  freezed: ^3.2.3
+  # annotation for freezed code generation
+  freezed_annotation: ^3.1.0
+  # for dependency injection
+  get_it: ^9.0.5
+  # json serialization, auto generate fromJson/toJson annotations
+  json_serializable: ^6.11.0
+  json_annotation: ^4.9.0
+  # Networking) Dio: HTTP client for making API requests, and retrofit: Dio client generator
+  dio: ^5.9.0
+  retrofit: ^4.9.0
+  retrofit_generator: ^10.1.4
+  pretty_dio_logger: ^1.4.0
+  # localization
+  intl: ^0.20.0
+  easy_localization: ^3.0.8
+  # splash screen
+  flutter_native_splash: ^2.4.7
+  # SVG rendering library
+  flutter_svg: ^2.2.0
+  # responsive design
+  flutter_screenutil: ^5.9.0
   
   # State Management
   get: ^4.6.6
-  
-  # Other utilities
-  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:

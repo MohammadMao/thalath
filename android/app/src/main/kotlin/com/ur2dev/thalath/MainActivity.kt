@@ -1,4 +1,4 @@
-package com.example.thalath
+package com.ur2dev.thalath
 
 import io.flutter.embedding.android.FlutterActivity
 
