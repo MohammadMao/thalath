@@ -56,11 +56,13 @@ class FeatureCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
+                  textDirection: TextDirection.rtl,
                 ),
                 SizedBox(height: 4.h),
                 Text(
                   description,
                   style: Theme.of(context).textTheme.bodySmall,
+                  textDirection: TextDirection.rtl,
                 ),
               ],
             ),

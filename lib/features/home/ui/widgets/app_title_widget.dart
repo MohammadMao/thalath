@@ -40,10 +40,11 @@ class AppTitleWidget extends StatelessWidget {
         SizedBox(height: 4.h),
         
         Text(
-          'اختبر مفرداتك',
+          'تحدى أصدقاءك في لعبة الكلمات العربية',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: AppTheme.textSecondary,
           ),
+          textAlign: TextAlign.center,
         ),
       ],
     );
