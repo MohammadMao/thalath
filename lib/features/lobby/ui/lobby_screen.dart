@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 import '../../../core/models/models.dart';
 import 'widgets/room_card.dart';
 import 'widgets/create_room_button.dart';
@@ -106,12 +107,7 @@ class _RoomsPageState extends State<RoomsPage> {
                             maxPlayers: 4,
                             status: room.status,
                             onJoin: () {
-                              // TODO: Join room
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('جاري الانضمام للغرفة ${room.id}'),
-                                ),
-                              );
+                              Get.toNamed('/room');
                             },
                           );
                         },

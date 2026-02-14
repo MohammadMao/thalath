@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'core/theming/app_theme.dart';
-import 'features/home/ui/home_page.dart';
-import 'features/room/ui/rooms_page.dart';
+import 'features/home/ui/home_screen.dart';
+import 'features/lobby/ui/lobby_screen.dart';
+import 'features/room/ui/room_screen.dart';
 
 class ThalathApp extends StatelessWidget {
   const ThalathApp({super.key});
@@ -29,6 +30,10 @@ class ThalathApp extends StatelessWidget {
             GetPage(
               name: '/rooms',
               page: () => const RoomsPage(),
+            ),
+            GetPage(
+              name: '/room',
+              page: () => const RoomScreen(),
             ),
           ],
         );
