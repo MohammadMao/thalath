@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../core/models/models.dart';
+import '../../../core/auth/auth_service.dart';
 import 'widgets/room_card.dart';
 import 'widgets/create_room_button.dart';
 
@@ -61,11 +62,33 @@ class _RoomsPageState extends State<RoomsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Get.find<AuthService>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('الغرف'),
         centerTitle: true,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            onPressed: () async {
+              await authService.signOut();
+              Get.offAllNamed('/home');
+              Get.snackbar(
+                'تم',
+                'تم تسجيل الخروج بنجاح',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.green.withOpacity(0.8),
+                colorText: Colors.white,
+                margin: const EdgeInsets.all(16),
+                borderRadius: 12,
+                duration: const Duration(seconds: 2),
+              );
+            },
+            tooltip: 'تسجيل الخروج',
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(

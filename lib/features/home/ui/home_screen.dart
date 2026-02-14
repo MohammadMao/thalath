@@ -28,7 +28,7 @@ class HomePage extends StatelessWidget {
                 Center(
                   child: PlayButtonCard(
                     onPressed: () {
-                      Get.toNamed('/rooms');
+                      Get.toNamed('/login');
                     },
                   ),
                 ),
