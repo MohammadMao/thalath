@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'core/theming/app_theme.dart';
 import 'core/auth/auth_service.dart';
+import 'core/services/user_service.dart';
 import 'features/home/ui/home_screen.dart';
 import 'features/login/login_screen.dart';
 import 'features/lobby/ui/lobby_screen.dart';
@@ -16,6 +17,7 @@ class ThalathApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialize AuthService
     final authService = Get.put(AuthService());
+    Get.put(UserService());
 
     final view = WidgetsBinding.instance.platformDispatcher.views.first;
     final logicalSize = view.physicalSize / view.devicePixelRatio;

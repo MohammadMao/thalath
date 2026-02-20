@@ -17,6 +17,7 @@ class RoomsPage extends StatefulWidget {
 class _RoomsPageState extends State<RoomsPage> {
   // Mock data
   late List<Room> rooms;
+  late List<int> roomPlayers;
 
   @override
   void initState() {
@@ -28,37 +29,59 @@ class _RoomsPageState extends State<RoomsPage> {
     rooms = [
       Room(
         id: '1',
-        status: 'Waiting',
+        name: 'الغرفة 1',
+        createdBy: 'user1',
+        status: 'waiting',
         currentWord: 'كتب',
         currentTurn: 'user1',
-        playerIds: ['user1', 'user2'],
+        maxPlayers: 4,
+        turnStartedAt: DateTime.now().subtract(const Duration(minutes: 1)),
+        winnerId: null,
         createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
+        finishedAt: null,
       ),
       Room(
         id: '2',
-        status: 'Playing',
+        name: 'الغرفة 2',
+        createdBy: 'user3',
+        status: 'playing',
         currentWord: 'جمل',
         currentTurn: 'user3',
-        playerIds: ['user3', 'user4', 'user5', 'user6'],
+        maxPlayers: 4,
+        turnStartedAt: DateTime.now().subtract(const Duration(minutes: 3)),
+        winnerId: null,
         createdAt: DateTime.now().subtract(const Duration(minutes: 10)),
+        finishedAt: null,
       ),
       Room(
         id: '3',
-        status: 'Waiting',
+        name: 'الغرفة 3',
+        createdBy: 'user7',
+        status: 'waiting',
         currentWord: 'نجم',
         currentTurn: 'user7',
-        playerIds: ['user7'],
+        maxPlayers: 4,
+        turnStartedAt: DateTime.now().subtract(const Duration(minutes: 1)),
+        winnerId: null,
         createdAt: DateTime.now().subtract(const Duration(minutes: 2)),
+        finishedAt: null,
       ),
       Room(
         id: '4',
-        status: 'Playing',
+        name: 'الغرفة 4',
+        createdBy: 'user8',
+        status: 'playing',
         currentWord: 'قمر',
         currentTurn: 'user8',
-        playerIds: ['user8', 'user9', 'user10'],
+        maxPlayers: 4,
+        turnStartedAt: DateTime.now().subtract(const Duration(minutes: 4)),
+        winnerId: null,
         createdAt: DateTime.now(),
+        finishedAt: null,
       ),
     ];
+
+    roomPlayers = [2, 4, 1, 3];
   }
 
   @override
@@ -128,9 +151,9 @@ class _RoomsPageState extends State<RoomsPage> {
                         itemBuilder: (context, index) {
                           final room = rooms[index];
                           return RoomCard(
-                            roomName: 'الغرفة ${index + 1}',
-                            currentPlayers: room.playerIds.length,
-                            maxPlayers: 4,
+                            roomName: room.name,
+                            currentPlayers: roomPlayers[index],
+                            maxPlayers: room.maxPlayers,
                             status: room.status,
                             onJoin: () {
                               Get.toNamed('/room');

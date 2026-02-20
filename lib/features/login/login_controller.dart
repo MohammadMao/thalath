@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/auth/auth_service.dart';
+import '../../core/services/user_service.dart';
 
 class LoginController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
+  final UserService _userService = Get.find<UserService>();
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -58,6 +60,8 @@ class LoginController extends GetxController {
         password: passwordController.text,
       );
 
+      await _ensureUserProfile();
+
       // Navigate to lobby on success
       Get.offAllNamed('/rooms');
 
@@ -85,5 +89,53 @@ class LoginController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> _ensureUserProfile() async {
+    try {
+      await _userService.ensureUserDocument();
+    } on StateError catch (e) {
+      if (e.message != 'missing-display-name') {
+        rethrow;
+      }
+
+      final name = await _promptForName();
+      if (name == null || name.trim().isEmpty) {
+        throw 'يرجى إدخال الاسم';
+      }
+
+      _userService.setDisplayName(name);
+      await _userService.ensureUserDocument();
+    }
+  }
+
+  Future<String?> _promptForName() async {
+    final controller = TextEditingController();
+
+    final result = await Get.dialog<String>(
+      AlertDialog(
+        content: TextField(
+          controller: controller,
+          textDirection: TextDirection.rtl,
+          decoration: const InputDecoration(
+            hintText: 'اختر اسماً',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: null),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () => Get.back(result: controller.text.trim()),
+            child: const Text('تأكيد'),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+
+    controller.dispose();
+    return result;
   }
 }

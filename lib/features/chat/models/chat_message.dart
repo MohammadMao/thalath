@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ChatMessage {
   final String id;
   final String senderId;
@@ -13,23 +15,42 @@ class ChatMessage {
     required this.createdAt,
   });
 
-  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+  factory ChatMessage.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data() ?? {};
     return ChatMessage(
-      id: json['id'] as String,
-      senderId: json['senderId'] as String,
-      senderName: json['senderName'] as String,
-      text: json['text'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      id: doc.id,
+      senderId: data['senderId'] as String? ?? '',
+      senderName: data['senderName'] as String? ?? '',
+      text: data['text'] as String? ?? '',
+      createdAt:
+          (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toFirestore() {
     return {
-      'id': id,
       'senderId': senderId,
       'senderName': senderName,
       'text': text,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': Timestamp.fromDate(createdAt),
     };
+  }
+
+  ChatMessage copyWith({
+    String? id,
+    String? senderId,
+    String? senderName,
+    String? text,
+    DateTime? createdAt,
+  }) {
+    return ChatMessage(
+      id: id ?? this.id,
+      senderId: senderId ?? this.senderId,
+      senderName: senderName ?? this.senderName,
+      text: text ?? this.text,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 }

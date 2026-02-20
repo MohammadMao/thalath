@@ -20,7 +20,7 @@ class RoomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isWaiting = status == 'Waiting';
+    final isWaiting = status == 'waiting';
     final statusColor = isWaiting ? AppTheme.primaryGreen : Colors.orange;
 
     return Container(
@@ -78,7 +78,7 @@ class RoomCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Text(
-                    status == 'Waiting' ? 'في الانتظار' : 'قيد اللعب',
+                    isWaiting ? 'في الانتظار' : 'قيد اللعب',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: statusColor,
                       fontWeight: FontWeight.w600,

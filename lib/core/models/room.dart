@@ -1,65 +1,91 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Room {
   final String id;
+  final String name;
+  final String createdBy;
   final String status; // waiting, playing, finished
   final String currentWord;
   final String currentTurn; // player ID whose turn it is
-  final List<String> playerIds;
+  final int maxPlayers;
+  final DateTime turnStartedAt;
+  final String? winnerId;
   final DateTime createdAt;
-  final DateTime? updatedAt;
+  final DateTime? finishedAt;
 
   Room({
     required this.id,
+    required this.name,
+    required this.createdBy,
     required this.status,
     required this.currentWord,
     required this.currentTurn,
-    required this.playerIds,
+    required this.maxPlayers,
+    required this.turnStartedAt,
+    required this.winnerId,
     required this.createdAt,
-    this.updatedAt,
+    required this.finishedAt,
   });
 
-  factory Room.fromJson(Map<String, dynamic> json) {
+  factory Room.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? {};
     return Room(
-      id: json['id'] as String,
-      status: json['status'] as String,
-      currentWord: json['currentWord'] as String,
-      currentTurn: json['currentTurn'] as String,
-      playerIds: List<String>.from(json['playerIds'] as List),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: json['updatedAt'] != null 
-          ? DateTime.parse(json['updatedAt'] as String) 
-          : null,
+      id: doc.id,
+      name: data['name'] as String? ?? '',
+      createdBy: data['createdBy'] as String? ?? '',
+      status: data['status'] as String? ?? 'waiting',
+      currentWord: data['currentWord'] as String? ?? '',
+      currentTurn: data['currentTurn'] as String? ?? '',
+      maxPlayers: (data['maxPlayers'] as num?)?.toInt() ?? 4,
+      turnStartedAt:
+          (data['turnStartedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      winnerId: data['winnerId'] as String?,
+      createdAt:
+          (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      finishedAt: (data['finishedAt'] as Timestamp?)?.toDate(),
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toFirestore() {
     return {
-      'id': id,
+      'name': name,
+      'createdBy': createdBy,
       'status': status,
       'currentWord': currentWord,
       'currentTurn': currentTurn,
-      'playerIds': playerIds,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
+      'maxPlayers': maxPlayers,
+      'turnStartedAt': Timestamp.fromDate(turnStartedAt),
+      'winnerId': winnerId,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'finishedAt': finishedAt != null ? Timestamp.fromDate(finishedAt!) : null,
     };
   }
 
   Room copyWith({
     String? id,
+    String? name,
+    String? createdBy,
     String? status,
     String? currentWord,
     String? currentTurn,
-    List<String>? playerIds,
+    int? maxPlayers,
+    DateTime? turnStartedAt,
+    String? winnerId,
     DateTime? createdAt,
-    DateTime? updatedAt,
+    DateTime? finishedAt,
   }) {
     return Room(
       id: id ?? this.id,
+      name: name ?? this.name,
+      createdBy: createdBy ?? this.createdBy,
       status: status ?? this.status,
       currentWord: currentWord ?? this.currentWord,
       currentTurn: currentTurn ?? this.currentTurn,
-      playerIds: playerIds ?? this.playerIds,
+      maxPlayers: maxPlayers ?? this.maxPlayers,
+      turnStartedAt: turnStartedAt ?? this.turnStartedAt,
+      winnerId: winnerId ?? this.winnerId,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      finishedAt: finishedAt ?? this.finishedAt,
     );
   }
 }
