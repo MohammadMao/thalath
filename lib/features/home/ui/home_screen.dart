@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import '../../../core/widgets/responsive_content.dart';
 import 'widgets/app_title_widget.dart';
 import 'widgets/play_button_card.dart';
 import 'widgets/feature_card.dart';
@@ -12,11 +13,13 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: Column(
-              children: [
+        child: ResponsiveContent(
+          maxWidth: 900,
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: Column(
+                children: [
                 SizedBox(height: 50.h),
                 
                 // App title
@@ -58,8 +61,9 @@ class HomePage extends StatelessWidget {
                   description: 'العب ودردش',
                 ),
                 
-                SizedBox(height: 40.h),
-              ],
+                  SizedBox(height: 40.h),
+                ],
+              ),
             ),
           ),
         ),

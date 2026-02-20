@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'letter_card.dart';
 
 class WordCards extends StatelessWidget {
   final List<String> letters;
+  final double? cardSize;
+  final double? gap;
+  final double? radius;
 
   const WordCards({
     super.key,
     required this.letters,
+    this.cardSize,
+    this.gap,
+    this.radius,
   });
 
   @override
@@ -18,10 +23,10 @@ class WordCards extends StatelessWidget {
         for (int i = 0; i < letters.length; i++) ...[
           LetterCard(
             letter: letters[i],
-            size: 90.w,
-            radius: 16.r,
+            size: cardSize ?? 90,
+            radius: radius ?? 16,
           ),
-          if (i != letters.length - 1) SizedBox(width: 12.w),
+          if (i != letters.length - 1) SizedBox(width: gap ?? 12),
         ],
       ],
     );

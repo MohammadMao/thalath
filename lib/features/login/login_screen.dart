@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../core/theming/app_theme.dart';
 import '../../core/widgets/auth_text_field.dart';
 import '../../core/widgets/auth_button.dart';
+import '../../core/widgets/responsive_content.dart';
 import 'login_controller.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -21,12 +22,13 @@ class LoginScreen extends StatelessWidget {
             end: Alignment.bottomCenter,
             colors: [
               AppTheme.darkBackground,
-              AppTheme.darkBackground.withOpacity(0.8),
+              AppTheme.darkBackground.withValues(alpha: 0.8),
             ],
           ),
         ),
         child: SafeArea(
-          child: Center(
+          child: ResponsiveContent(
+            maxWidth: 600,
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 24.w),
               child: Column(

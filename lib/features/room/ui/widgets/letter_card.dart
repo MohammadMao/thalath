@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/helpers/letter_colors.dart';
 
 class LetterCard extends StatelessWidget {
@@ -39,7 +38,7 @@ class LetterCard extends StatelessWidget {
         child: Text(
           letter,
           style: TextStyle(
-            fontSize: (size * 0.5).sp,
+            fontSize: (size * 0.52).clamp(22.0, 48.0),
             fontWeight: FontWeight.w700,
             color: Colors.white,
           ),

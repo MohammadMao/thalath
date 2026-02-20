@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -14,10 +15,19 @@ class ThalathApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Initialize AuthService
-    Get.put(AuthService());
+    final authService = Get.put(AuthService());
+
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final logicalSize = view.physicalSize / view.devicePixelRatio;
+    final isWeb = kIsWeb;
+    final clampedWebWidth = logicalSize.width.clamp(700.0, 1200.0);
+    final clampedWebHeight = logicalSize.height.clamp(700.0, 1000.0);
+    final designSize = isWeb
+      ? Size(clampedWebWidth, clampedWebHeight)
+      : const Size(375, 812);
 
     return ScreenUtilInit(
-      designSize: const Size(375, 812), // Base design size (iPhone 11 Pro)
+      designSize: designSize,
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
@@ -26,7 +36,13 @@ class ThalathApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: AppTheme.darkTheme,
           themeMode: ThemeMode.dark,
-          home: const HomePage(),
+          home: Obx(() {
+            // Check auth state and route accordingly
+            if (authService.firebaseUser.value != null) {
+              return const RoomsPage();
+            }
+            return const HomePage();
+          }),
           getPages: [
             GetPage(
               name: '/home',

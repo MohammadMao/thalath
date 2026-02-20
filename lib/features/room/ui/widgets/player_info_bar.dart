@@ -1,26 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theming/app_theme.dart';
 
 class PlayerInfoBar extends StatelessWidget {
   final String playerName;
   final VoidCallback onChat;
+  final double scale;
 
   const PlayerInfoBar({
     super.key,
     required this.playerName,
     required this.onChat,
+    this.scale = 1.0,
   });
 
   @override
   Widget build(BuildContext context) {
+    final badgeRadius = 20 * scale;
+    final badgePaddingH = 14 * scale;
+    final badgePaddingV = 8 * scale;
+    final buttonSize = 44 * scale;
+    final iconSize = 22 * scale;
+    final blurRadius = 12 * scale;
+    final shadowOffset = 6 * scale;
+
     return Row(
       children: [
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+          padding: EdgeInsets.symmetric(
+            horizontal: badgePaddingH,
+            vertical: badgePaddingV,
+          ),
           decoration: BoxDecoration(
             color: AppTheme.primaryGreen.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(20.r),
+            borderRadius: BorderRadius.circular(badgeRadius),
             border: Border.all(
               color: AppTheme.primaryGreen.withValues(alpha: 0.4),
             ),
@@ -37,23 +49,23 @@ class PlayerInfoBar extends StatelessWidget {
         GestureDetector(
           onTap: onChat,
           child: Container(
-            width: 44.w,
-            height: 44.w,
+            width: buttonSize,
+            height: buttonSize,
             decoration: BoxDecoration(
               color: AppTheme.primaryGreen,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
                   color: AppTheme.primaryGreen.withValues(alpha: 0.4),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
+                  blurRadius: blurRadius,
+                  offset: Offset(0, shadowOffset),
                 ),
               ],
             ),
             child: Icon(
               Icons.chat_bubble_rounded,
               color: Colors.white,
-              size: 22.sp,
+              size: iconSize,
             ),
           ),
         ),

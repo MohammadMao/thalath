@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../core/models/models.dart';
 import '../../../core/auth/auth_service.dart';
+import '../../../core/widgets/responsive_content.dart';
 import 'widgets/room_card.dart';
 import 'widgets/create_room_button.dart';
 
@@ -79,7 +80,7 @@ class _RoomsPageState extends State<RoomsPage> {
                 'تم',
                 'تم تسجيل الخروج بنجاح',
                 snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: Colors.green.withOpacity(0.8),
+                backgroundColor: Colors.green.withValues(alpha: 0.8),
                 colorText: Colors.white,
                 margin: const EdgeInsets.all(16),
                 borderRadius: 12,
@@ -91,10 +92,12 @@ class _RoomsPageState extends State<RoomsPage> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Column(
-            children: [
+        child: ResponsiveContent(
+          maxWidth: 1000,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Column(
+              children: [
               SizedBox(height: 16.h),
               
               // Create room button
@@ -137,8 +140,9 @@ class _RoomsPageState extends State<RoomsPage> {
                       ),
               ),
               
-              SizedBox(height: 24.h),
-            ],
+                SizedBox(height: 24.h),
+              ],
+            ),
           ),
         ),
       ),
