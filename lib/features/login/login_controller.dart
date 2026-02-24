@@ -63,7 +63,7 @@ class LoginController extends GetxController {
       await _ensureUserProfile();
 
       // Navigate to lobby on success
-      Get.offAllNamed('/rooms');
+      Get.offAllNamed('/lobby');
 
       Get.snackbar(
         'نجح',

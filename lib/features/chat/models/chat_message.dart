@@ -24,8 +24,9 @@ class ChatMessage {
       senderId: data['senderId'] as String? ?? '',
       senderName: data['senderName'] as String? ?? '',
       text: data['text'] as String? ?? '',
-      createdAt:
-          (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: (data['sentAt'] as Timestamp?)?.toDate() ??
+          (data['createdAt'] as Timestamp?)?.toDate() ??
+          DateTime.now(),
     );
   }
 
@@ -34,7 +35,7 @@ class ChatMessage {
       'senderId': senderId,
       'senderName': senderName,
       'text': text,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'sentAt': Timestamp.fromDate(createdAt),
     };
   }
 

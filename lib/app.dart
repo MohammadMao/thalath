@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'core/theming/app_theme.dart';
 import 'core/auth/auth_service.dart';
 import 'core/services/user_service.dart';
+import 'core/services/room_service.dart';
 import 'features/home/ui/home_screen.dart';
 import 'features/login/login_screen.dart';
 import 'features/lobby/ui/lobby_screen.dart';
@@ -18,6 +19,7 @@ class ThalathApp extends StatelessWidget {
     // Initialize AuthService
     final authService = Get.put(AuthService());
     Get.put(UserService());
+    Get.put(RoomService());
 
     final view = WidgetsBinding.instance.platformDispatcher.views.first;
     final logicalSize = view.physicalSize / view.devicePixelRatio;
@@ -41,7 +43,7 @@ class ThalathApp extends StatelessWidget {
           home: Obx(() {
             // Check auth state and route accordingly
             if (authService.firebaseUser.value != null) {
-              return const RoomsPage();
+              return const LobbyScreen();
             }
             return const HomePage();
           }),
@@ -55,8 +57,8 @@ class ThalathApp extends StatelessWidget {
               page: () => const LoginScreen(),
             ),
             GetPage(
-              name: '/rooms',
-              page: () => const RoomsPage(),
+              name: '/lobby',
+              page: () => const LobbyScreen(),
               middlewares: [AuthMiddleware()],
             ),
             GetPage(
