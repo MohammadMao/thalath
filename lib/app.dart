@@ -27,8 +27,8 @@ class ThalathApp extends StatelessWidget {
     final clampedWebWidth = logicalSize.width.clamp(700.0, 1200.0);
     final clampedWebHeight = logicalSize.height.clamp(700.0, 1000.0);
     final designSize = isWeb
-      ? Size(clampedWebWidth, clampedWebHeight)
-      : const Size(375, 812);
+        ? Size(clampedWebWidth, clampedWebHeight)
+        : const Size(375, 812);
 
     return ScreenUtilInit(
       designSize: designSize,
@@ -48,14 +48,8 @@ class ThalathApp extends StatelessWidget {
             return const HomePage();
           }),
           getPages: [
-            GetPage(
-              name: '/home',
-              page: () => const HomePage(),
-            ),
-            GetPage(
-              name: '/login',
-              page: () => const LoginScreen(),
-            ),
+            GetPage(name: '/home', page: () => const HomePage()),
+            GetPage(name: '/login', page: () => const LoginScreen()),
             GetPage(
               name: '/lobby',
               page: () => const LobbyScreen(),
@@ -63,7 +57,10 @@ class ThalathApp extends StatelessWidget {
             ),
             GetPage(
               name: '/room',
-              page: () => const RoomScreen(),
+              page: () {
+                final args = Get.arguments as Map<String, dynamic>;
+                return RoomScreen(roomId: args['roomId']);
+              },
               middlewares: [AuthMiddleware()],
             ),
           ],

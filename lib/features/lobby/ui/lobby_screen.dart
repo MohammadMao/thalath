@@ -108,7 +108,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                           maxPlayers: room.maxPlayers,
                           status: room.status,
                           onJoin: () {
-                            Get.toNamed('/room');
+                            Get.toNamed('/room', arguments: {'roomId': room.id});
                           },
                         );
                       },

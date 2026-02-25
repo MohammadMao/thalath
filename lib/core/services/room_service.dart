@@ -15,7 +15,7 @@ class RoomService {
   CollectionReference<Map<String, dynamic>> get _rooms =>
       _firestore.collection('rooms');
 
-    CollectionReference<Map<String, dynamic>> get _users =>
+  CollectionReference<Map<String, dynamic>> get _users =>
       _firestore.collection('users');
 
   CollectionReference<Map<String, dynamic>> _players(String roomId) =>

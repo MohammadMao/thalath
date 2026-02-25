@@ -103,14 +103,16 @@ class RoomController extends GetxController {
     }
   }
 
+  // Extract letters from current word
   List<String> get currentWordLetters {
     final value = room.value;
     if (value == null || value.currentWord.isEmpty) {
-      return const ['ك', 'ت', 'ب'];
+      return const ['ك', 'ت', 'ب'];  // Default word
     }
-    return value.currentWord.split('');
+    return value.currentWord.split('');  // ['ك', 'ت', 'ب']
   }
 
+  // Find current user in players list
   Player? get currentPlayer {
     final id = currentUserId;
     if (id == null) {
@@ -124,11 +126,13 @@ class RoomController extends GetxController {
     return null;
   }
 
+  // All players EXCEPT current user
   List<Player> get otherPlayers {
     final id = currentUserId;
     return players.where((player) => player.id != id).toList();
   }
 
+  // Current user's name
   String get currentPlayerName {
     final player = currentPlayer;
     if (player == null || player.name.isEmpty) {
@@ -137,20 +141,24 @@ class RoomController extends GetxController {
     return player.name;
   }
 
+  // Is current user the room creator?
   bool get isCreator {
     final value = room.value;
     final id = currentUserId;
     return value != null && id != null && value.createdBy == id;
   }
 
+  // Has game started?
   bool get hasStarted {
     return room.value?.status == 'playing';
   }
 
+  // Can "Start Game" button be enabled?
   bool get canStartGame {
     return isCreator && !hasStarted && players.length >= 2;
   }
 
+  // Timer display (e.g., "05")
   String get timerText {
     return remainingSeconds.value.toString().padLeft(2, '0');
   }
