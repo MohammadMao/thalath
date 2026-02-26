@@ -6,6 +6,8 @@ class PlayerInfoBar extends StatelessWidget {
   final VoidCallback onChat;
   final double scale;
   final bool isMyTurn;
+  final int score;
+  final String status;
 
   const PlayerInfoBar({
     super.key,
@@ -13,6 +15,8 @@ class PlayerInfoBar extends StatelessWidget {
     required this.onChat,
     this.scale = 1.0,
     this.isMyTurn = false,
+    this.score = 0,
+    this.status = 'playing',
   });
 
   @override
@@ -61,6 +65,18 @@ class PlayerInfoBar extends StatelessWidget {
                   ),
                   SizedBox(width: 6 * scale),
                 ],
+              if (status == 'lost') ...
+                [
+                  Container(
+                    width: 8 * scale,
+                    height: 8 * scale,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  SizedBox(width: 6 * scale),
+                ],
               Text(
                 playerName,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -68,6 +84,24 @@ class PlayerInfoBar extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              if (score >= 1) ...
+                [
+                  SizedBox(width: 6 * scale),
+                  Icon(
+                    Icons.emoji_events_rounded,
+                    color: Colors.amber,
+                    size: 14 * scale,
+                  ),
+                  SizedBox(width: 2 * scale),
+                  Text(
+                    '$score',
+                    style: TextStyle(
+                      color: Colors.amber,
+                      fontSize: 11 * scale,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
             ],
           ),
         ),

@@ -8,6 +8,7 @@ class RoomCard extends StatelessWidget {
   final int maxPlayers;
   final String status;
   final VoidCallback onJoin;
+  final bool canJoin;
 
   const RoomCard({
     super.key,
@@ -16,6 +17,7 @@ class RoomCard extends StatelessWidget {
     required this.maxPlayers,
     required this.status,
     required this.onJoin,
+    this.canJoin = true,
   });
 
   @override
@@ -96,19 +98,23 @@ class RoomCard extends StatelessWidget {
             width: 70.w,
             height: 40.h,
             child: ElevatedButton(
-              onPressed: onJoin,
+              onPressed: canJoin ? onJoin : null,
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.zero,
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,
+                disabledBackgroundColor: Colors.transparent,
               ),
               child: Ink(
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.primaryTeal, AppTheme.primaryGreen],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: canJoin
+                      ? const LinearGradient(
+                          colors: [AppTheme.primaryTeal, AppTheme.primaryGreen],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : null,
+                  color: canJoin ? null : Colors.white12,
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Center(
@@ -117,7 +123,7 @@ class RoomCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: canJoin ? Colors.white : Colors.white38,
                     ),
                   ),
                 ),

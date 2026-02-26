@@ -102,13 +102,22 @@ class _LobbyScreenState extends State<LobbyScreen> {
                           SizedBox(height: 12.h),
                       itemBuilder: (context, index) {
                         final room = rooms[index];
+                        final currentUid = authService.currentUserId;
+                        final alreadyInRoom = currentUid != null &&
+                            room.playerIds.contains(currentUid);
                         return RoomCard(
                           roomName: room.name,
-                          currentPlayers: 0,
+                          currentPlayers: room.playerCount,
                           maxPlayers: room.maxPlayers,
                           status: room.status,
+                          canJoin: alreadyInRoom ||
+                              (room.status == 'waiting' &&
+                                  room.playerCount < room.maxPlayers),
                           onJoin: () {
-                            Get.toNamed('/room', arguments: {'roomId': room.id});
+                            Get.toNamed(
+                              '/room',
+                              arguments: {'roomId': room.id},
+                            );
                           },
                         );
                       },

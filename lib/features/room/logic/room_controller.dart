@@ -8,6 +8,7 @@ import '../../../core/models/player.dart';
 import '../../../core/services/room_service.dart';
 import '../../../core/game_engine/game_engine.dart';
 import '../../../core/helpers/logger.dart';
+import '../ui/widgets/game_result_dialog.dart';
 
 class RoomController extends GetxController {
   RoomController({required this.roomId});
@@ -37,8 +38,10 @@ class RoomController extends GetxController {
   StreamSubscription<Room>? _roomSub;
   StreamSubscription<List<Player>>? _playersSub;
   Timer? _timer;
+  Worker? _roomWorker;
   String? _timerKey;
   bool _joined = false;
+  bool _resultDialogShown = false;
 
   String? get currentUserId => _auth.currentUser?.uid;
 
@@ -69,7 +72,21 @@ class RoomController extends GetxController {
     }, onError: (e) {
       logger.severe('[onInit] Players stream ERROR: $e');
     });
-    
+
+    // Watch for game-finished / replay transitions
+    _roomWorker = ever(room, (Room? r) {
+      if (r?.status == 'finished' && !_resultDialogShown) {
+        _resultDialogShown = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (Get.isDialogOpen != true) _showGameResult(r!);
+        });
+      } else if (r?.status == 'waiting' && _resultDialogShown) {
+        // Game was replayed — reset local state for the new round
+        _resultDialogShown = false;
+        localHand.clear();
+      }
+    });
+
     logger.info('[onInit] completed, streams registered');
   }
 
@@ -78,6 +95,7 @@ class RoomController extends GetxController {
     _roomSub?.cancel();
     _playersSub?.cancel();
     _timer?.cancel();
+    _roomWorker?.dispose();
     super.onClose();
   }
 
@@ -92,8 +110,20 @@ class RoomController extends GetxController {
       await _roomService.ensurePlayerInRoom(roomId);
       logger.info('[_ensureJoined] completed successfully');
     } catch (e) {
-      logger.severe('[_ensureJoined] ERROR: $e');
       _joined = false;
+      final msg = e.toString();
+      if (msg.contains('room-not-waiting') || msg.contains('room-full')) {
+        logger.info('[_ensureJoined] Cannot join: $msg — redirecting to lobby');
+        Get.offAllNamed('/lobby');
+        Get.snackbar(
+          'تعذّر الانضمام',
+          msg.contains('full') ? 'الغرفة ممتلئة' : 'اللعبة بدأت بالفعل',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 3),
+        );
+      } else {
+        logger.severe('[_ensureJoined] ERROR: $e');
+      }
     }
   }
 
@@ -256,19 +286,31 @@ class RoomController extends GetxController {
         // Remove played card from hand
         localHand.removeAt(handIdx);
         selectedHandIndex.value = null;
-
-        final nextPlayerId = _getNextPlayerId();
-
-        await _roomService.playCard(
-          roomId: roomId,
-          playerId: currentUserId!,
-          newWord: result.newWord,
-          newCardsCount: localHand.length,
-          nextTurnPlayerId: nextPlayerId,
-        );
-
-        // Reset mistakes for the turn
         turnMistakes.value = 0;
+
+        if (localHand.isEmpty) {
+          // 🏆 Player wins with this move
+          logger.info('[playOnWordCard] WIN with word: ${result.newWord}');
+          await _roomService.winGame(
+            roomId: roomId,
+            winnerId: currentUserId!,
+            winningWord: result.newWord,
+            otherPlayerIds: players
+                .where((p) => p.id != currentUserId)
+                .map((p) => p.id)
+                .toList(),
+          );
+        } else {
+          final nextPlayerId = _getNextPlayerId();
+          await _roomService.playCard(
+            roomId: roomId,
+            playerId: currentUserId!,
+            newWord: result.newWord,
+            newCardsCount: localHand.length,
+            nextTurnPlayerId: nextPlayerId,
+          );
+        }
+
         logger.info('[playOnWordCard] Firebase updated successfully');
       } catch (e) {
         logger.severe('[playOnWordCard] Firebase update failed: $e');
@@ -328,16 +370,8 @@ class RoomController extends GetxController {
     isPlaying.value = true;
     try {
       if (localHand.length >= loseThreshold) {
-        // Player loses
         logger.info('[drawCard] Hand at $loseThreshold, player loses');
-        final nextPlayerId = _getNextPlayerId();
-        await _roomService.loseAndAdvanceTurn(
-          roomId: roomId,
-          playerId: uid,
-          newCardsCount: localHand.length,
-          nextTurnPlayerId: nextPlayerId,
-        );
-        // Note: the players stream will update status to 'lost' reactively
+        await _resignAndCheck(uid);
       } else {
         final drawn = _engine.drawCard(localHand);
         if (drawn == null) {
@@ -363,11 +397,126 @@ class RoomController extends GetxController {
     }
   }
 
+  /// Quit mid-game: resign first if still playing, then leave the room.
+  Future<void> forfeit() async {
+    final uid = currentUserId;
+    if (uid == null) return;
+    if (isPlaying.value) return;
+
+    isPlaying.value = true;
+    try {
+      logger.info('[forfeit] Player $uid forfeiting');
+      if (hasStarted && !isLost) {
+        await _resignAndCheck(uid);
+      }
+      await _doLeaveRoom(uid);
+    } catch (e) {
+      logger.severe('[forfeit] Failed: $e');
+    } finally {
+      isPlaying.value = false;
+    }
+
+    Get.offAllNamed('/lobby');
+  }
+
+  /// Shared: mark [uid] as lost. If exactly one playing player remains, they win.
+  Future<void> _resignAndCheck(String uid) async {
+    final otherPlaying = players
+        .where((p) => p.id != uid && p.status == 'playing')
+        .toList();
+
+    if (otherPlaying.length == 1) {
+      final winnerId = otherPlaying.first.id;
+      logger.info('[_resignAndCheck] Last player standing: $winnerId');
+      await _roomService.winGame(
+        roomId: roomId,
+        winnerId: winnerId,
+        winningWord: room.value?.currentWord ?? '',
+        otherPlayerIds: players
+            .where((p) => p.id != winnerId)
+            .map((p) => p.id)
+            .toList(),
+      );
+    } else {
+      // Determine next turn — must exclude uid since they're now out
+      final nextPlayerId = otherPlaying.isNotEmpty
+          ? otherPlaying.first.id // first of remaining is fine
+          : uid;
+      await _roomService.loseAndAdvanceTurn(
+        roomId: roomId,
+        playerId: uid,
+        newCardsCount: localHand.length,
+        nextTurnPlayerId: nextPlayerId,
+      );
+    }
+  }
+
   /// Flash green/red behind word cards briefly.
   void _showFlash(Color color) {
     wordFlashColor.value = color;
     Future.delayed(const Duration(milliseconds: 500), () {
       wordFlashColor.value = null;
     });
+  }
+
+  /// Replay the room (creator only). Closes dialog and resets game state.
+  Future<void> replayRoom() async {
+    if (Get.isDialogOpen == true) Get.back();
+    try {
+      await _roomService.replayRoom(
+        roomId,
+        players.map((p) => p.id).toList(),
+      );
+      logger.info('[replayRoom] Room reset successfully');
+    } catch (e) {
+      logger.severe('[replayRoom] Failed: $e');
+    }
+  }
+
+  /// Quit the room. Creator just leaves lobby; non-creator is removed from players.
+  Future<void> quitRoom() async {
+    final uid = currentUserId;
+    if (uid == null) return;
+    if (Get.isDialogOpen == true) Get.back();
+    try {
+      await _doLeaveRoom(uid);
+    } catch (e) {
+      logger.severe('[quitRoom] Failed: $e');
+    }
+    Get.offAllNamed('/lobby');
+  }
+
+  /// Remove current player from the room in Firebase.
+  /// Transfers creator role if needed. Deletes room if last player.
+  Future<void> _doLeaveRoom(String uid) async {
+    final remaining = players.where((p) => p.id != uid).toList();
+    final creatorLeaving = isCreator;
+    final newCreatorId = (creatorLeaving && remaining.isNotEmpty)
+        ? remaining.first.id
+        : null;
+
+    await _roomService.leaveRoom(
+      roomId: roomId,
+      playerId: uid,
+      remainingPlayerIds: remaining.map((p) => p.id).toList(),
+      isCreator: creatorLeaving,
+      currentStatus: room.value?.status ?? 'waiting',
+      newCreatorId: newCreatorId,
+    );
+  }
+
+  /// Show the game-result popup.
+  void _showGameResult(Room finishedRoom) {
+    final winner = finishedRoom.winnerId == currentUserId;
+    Get.dialog(
+      GameResultDialog(
+        isWinner: winner,
+        isCreator: isCreator,
+        onReplay: isCreator ? replayRoom : null,
+        onStay: !isCreator ? () { if (Get.isDialogOpen == true) Get.back(); } : null,
+        onQuit: quitRoom,
+      ),
+      barrierDismissible: false,
+    );
   }
 }

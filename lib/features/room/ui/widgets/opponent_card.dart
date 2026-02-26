@@ -16,6 +16,25 @@ class OpponentCard extends StatelessWidget {
     this.isCurrentTurn = false,
   });
 
+  Widget _trophyBadge(double unit) {
+    if (player.score < 1) return const SizedBox.shrink();
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 14 * unit),
+        SizedBox(width: 2 * unit),
+        Text(
+          '${player.score}',
+          style: TextStyle(
+            color: Colors.amber,
+            fontSize: 11 * unit,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final children = [
@@ -42,13 +61,29 @@ class OpponentCard extends StatelessWidget {
               ),
               SizedBox(width: 4 * unit),
             ],
+          if (player.status == 'lost') ...
+            [
+              Container(
+                width: 8 * unit,
+                height: 8 * unit,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              SizedBox(width: 4 * unit),
+            ],
           Text(
             player.name.isNotEmpty ? player.name : 'لاعب',
             style: Theme.of(context).textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),
+          if (!isVertical && player.score >= 1) ...
+            [SizedBox(width: 4 * unit), _trophyBadge(unit)],
         ],
       ),
+      if (isVertical && player.score >= 1) ...
+        [SizedBox(height: 4 * unit), _trophyBadge(unit)],
       SizedBox(height: isVertical ? 8 * unit : 6 * unit),
       // Cards count as small card visuals
       isVertical

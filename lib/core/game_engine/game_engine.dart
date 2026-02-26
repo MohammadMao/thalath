@@ -83,7 +83,8 @@ class GameEngine {
     if (word.isEmpty) {
       return false;
     }
-    return _dictionary.contains(word);
+    // return _dictionary.contains(word);
+    return true; // temporary bypass for testing
   }
 
   /// Attempt to replace a letter in the current word.

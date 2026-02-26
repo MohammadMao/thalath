@@ -54,6 +54,8 @@ class RoomService {
         'currentWord': 'كتب',
         'currentTurn': '',
         'maxPlayers': resolvedMaxPlayers,
+        'playerCount': 1,
+        'playerIds': [user.uid],
         'winnerId': null,
         'createdAt': Timestamp.now(),
         'finishedAt': null,
@@ -113,20 +115,28 @@ class RoomService {
   }
 
   // Ensure current user has a player document in the room.
+  // Validates: room must be 'waiting' and not full. Increments playerCount on join.
   Future<void> ensurePlayerInRoom(String roomId) async {
     final user = _auth.currentUser;
-    if (user == null) {
-      throw StateError('no-user');
-    }
+    if (user == null) throw StateError('no-user');
 
     final playerRef = _players(roomId).doc(user.uid);
     final userRef = _users.doc(user.uid);
+    final roomRef = _rooms.doc(roomId);
 
     await _firestore.runTransaction((transaction) async {
       final playerSnapshot = await transaction.get(playerRef);
-      if (playerSnapshot.exists) {
-        return;
-      }
+      if (playerSnapshot.exists) return; // Already in room
+
+      // Validate join conditions (reads room + user — no extra cost vs old code)
+      final roomSnapshot = await transaction.get(roomRef);
+      final roomData = roomSnapshot.data() ?? {};
+      final status = roomData['status'] as String? ?? 'waiting';
+      final playerCount = (roomData['playerCount'] as num?)?.toInt() ?? 0;
+      final maxPlayers = (roomData['maxPlayers'] as num?)?.toInt() ?? 4;
+
+      if (status != 'waiting') throw StateError('room-not-waiting');
+      if (playerCount >= maxPlayers) throw StateError('room-full');
 
       final userSnapshot = await transaction.get(userRef);
       final userData = userSnapshot.data();
@@ -140,6 +150,11 @@ class RoomService {
         'mistakes': 0,
         'score': 0,
         'joinedAt': Timestamp.now(),
+      });
+
+      transaction.update(roomRef, {
+        'playerCount': FieldValue.increment(1),
+        'playerIds': FieldValue.arrayUnion([user.uid]),
       });
     });
   }
@@ -226,43 +241,117 @@ class RoomService {
     });
   }
 
-  // Replay a room - reset game state, increment winner score, keep players & messages
-  Future<void> replayRoom(String roomId) async {
-    final room = await getRoom(roomId);
-    if (room == null) {
-      throw StateError('room-not-found');
+  // Replay a room - reset game state, keep scores, keep players & messages
+  // playerIds is passed from the controller (already in memory — no extra read needed)
+  Future<void> replayRoom(String roomId, List<String> playerIds) async {
+    final batch = _firestore.batch();
+
+    batch.update(_rooms.doc(roomId), {
+      'status': 'waiting',
+      'currentWord': 'كتب',
+      'currentTurn': '',
+      'winnerId': null,
+      'finishedAt': null,
+    });
+
+    for (final playerId in playerIds) {
+      batch.update(_players(roomId).doc(playerId), {
+        'cardsCount': 0,
+        'status': 'playing',
+        'mistakes': 0,
+      });
     }
 
-    await _firestore.runTransaction((transaction) async {
-      // Reset room fields
-      transaction.update(_rooms.doc(roomId), {
-        'status': 'waiting',
-        'currentWord': '',
-        'currentTurn': '',
-        'winnerId': null,
-        'finishedAt': null,
-      });
+    await batch.commit();
+  }
 
-      // If there was a winner, increment their score
-      if (room.winnerId != null && room.winnerId!.isNotEmpty) {
-        final winnerRef = _players(roomId).doc(room.winnerId);
-        final winnerDoc = await transaction.get(winnerRef);
-        if (winnerDoc.exists) {
-          final currentScore = (winnerDoc.data()?['score'] as num?)?.toInt() ?? 0;
-          transaction.update(winnerRef, {'score': currentScore + 1});
+  /// Declare a winner: set room to finished, increment winner score,
+  /// mark all other players as lost, record the winning word.
+  /// [otherPlayerIds] is passed from the controller (already in memory — no extra read needed).
+  Future<void> winGame({
+    required String roomId,
+    required String winnerId,
+    required String winningWord,
+    required List<String> otherPlayerIds,
+  }) async {
+    final batch = _firestore.batch();
+
+    batch.update(_rooms.doc(roomId), {
+      'status': 'finished',
+      'winnerId': winnerId,
+      'currentWord': winningWord,
+      'currentTurn': '',
+      'finishedAt': Timestamp.now(),
+    });
+
+    // FieldValue.increment avoids a read-then-write for the score
+    batch.update(_players(roomId).doc(winnerId), {
+      'cardsCount': 0,
+      'score': FieldValue.increment(1),
+      'status': 'playing',
+    });
+
+    for (final id in otherPlayerIds) {
+      batch.update(_players(roomId).doc(id), {'status': 'lost'});
+    }
+
+    await batch.commit();
+  }
+
+  /// Remove a player document from a room (used when non-creator quits).
+  Future<void> removePlayer(String roomId, String playerId) async {
+    await _players(roomId).doc(playerId).delete();
+  }
+
+  /// Leave a room: delete player doc, transfer creator role if needed,
+  /// delete room if empty, otherwise decrement playerCount.
+  /// If leaving a finished game with remaining players, reset to 'waiting'.
+  /// All data is passed from controller — zero extra reads.
+  Future<void> leaveRoom({
+    required String roomId,
+    required String playerId,
+    required List<String> remainingPlayerIds,
+    required bool isCreator,
+    required String currentStatus,
+    String? newCreatorId,
+  }) async {
+    final batch = _firestore.batch();
+
+    batch.delete(_players(roomId).doc(playerId));
+
+    if (remainingPlayerIds.isEmpty) {
+      // Last player leaving — delete the room doc
+      // (sub-collection orphans are acceptable on free tier)
+      batch.delete(_rooms.doc(roomId));
+    } else {
+      final roomUpdates = <String, dynamic>{
+        'playerCount': FieldValue.increment(-1),
+        'playerIds': FieldValue.arrayRemove([playerId]),
+      };
+      if (isCreator && newCreatorId != null) {
+        roomUpdates['createdBy'] = newCreatorId;
+      }
+      // If game was finished, reset to waiting so remaining players can start anew
+      if (currentStatus == 'finished') {
+        roomUpdates['status'] = 'waiting';
+        roomUpdates['currentWord'] = 'كتب';
+        roomUpdates['currentTurn'] = '';
+        roomUpdates['winnerId'] = null;
+        roomUpdates['finishedAt'] = null;
+        
+        // Reset all remaining players to fresh state
+        for (final pid in remainingPlayerIds) {
+          batch.update(_players(roomId).doc(pid), {
+            'status': 'playing',
+            'cardsCount': 0,
+            'mistakes': 0,
+          });
         }
       }
+      batch.update(_rooms.doc(roomId), roomUpdates);
+    }
 
-      // Reset all players' game state (cards, mistakes, status)
-      final playersSnapshot = await _players(roomId).get();
-      for (final playerDoc in playersSnapshot.docs) {
-        transaction.update(playerDoc.reference, {
-          'cardsCount': 0,
-          'status': 'playing',
-          'mistakes': 0,
-        });
-      }
-    });
+    await batch.commit();
   }
 
   // Delete a room and all its subcollections (players and messages)

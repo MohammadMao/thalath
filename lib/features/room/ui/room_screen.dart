@@ -89,6 +89,58 @@ class _RoomScreenState extends State<RoomScreen> {
                 final handCardSize = (56 * unit).clamp(44.0, 68.0);
                 final handCardGap = (8 * unit).clamp(6.0, 12.0);
 
+                // Quit button (top-right)
+                final quitButton = Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: EdgeInsets.all(8 * unit),
+                    child: IconButton(
+                      icon: const Icon(Icons.exit_to_app_rounded),
+                      color: Colors.redAccent,
+                      tooltip: 'خروج',
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            backgroundColor: AppTheme.darkSurface,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            title: const Text(
+                              'خروج',
+                              textDirection: TextDirection.rtl,
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            content: const Text(
+                              'هل تريد الخروج من اللعبة؟',
+                              textDirection: TextDirection.rtl,
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text('إلغاء',
+                                    style: TextStyle(color: Colors.white54)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.redAccent,
+                                  foregroundColor: Colors.white,
+                                ),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  controller.forfeit();
+                                },
+                                child: const Text('خروج'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                );
+
                 // Smart player positioning
                 var topPlayer = otherPlayers.isNotEmpty ? otherPlayers[0] : null;
                 var rightPlayer = otherPlayers.length > 1 ? otherPlayers[0] : null;
@@ -108,6 +160,7 @@ class _RoomScreenState extends State<RoomScreen> {
 
                 return Stack(
                   children: [
+                    quitButton,
                     // RIGHT: First opponent (3+ players)
                     if (rightPlayer != null)
                       Align(
@@ -248,6 +301,19 @@ class _RoomScreenState extends State<RoomScreen> {
                                 ),
                             ],
                           ),
+                          if ((controller.currentPlayer?.cardsCount ?? 0) == 22)
+                            Padding(
+                              padding: EdgeInsets.only(top: 8 * unit),
+                              child: Text(
+                                'وصلت حد الورق المسموح، السحبة الجاية خسارة :(',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 11 * unit,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -271,6 +337,8 @@ class _RoomScreenState extends State<RoomScreen> {
                               },
                               scale: unit,
                               isMyTurn: isMyTurn,
+                              score: controller.currentPlayer?.score ?? 0,
+                              status: controller.currentPlayer?.status ?? 'playing',
                             ),
                             SizedBox(height: 12 * unit),
                             PlayerHand(
