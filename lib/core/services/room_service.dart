@@ -300,4 +300,82 @@ class RoomService {
     // Delete room document
     await _rooms.doc(roomId).delete();
   }
+
+  /// Play a card: atomically update currentWord, currentTurn, and player's cardsCount.
+  Future<void> playCard({
+    required String roomId,
+    required String playerId,
+    required String newWord,
+    required int newCardsCount,
+    required String nextTurnPlayerId,
+  }) async {
+    final roomRef = _rooms.doc(roomId);
+    final playerRef = _players(roomId).doc(playerId);
+
+    await _firestore.runTransaction((transaction) async {
+      transaction.update(roomRef, {
+        'currentWord': newWord,
+        'currentTurn': nextTurnPlayerId,
+        'turnStartedAt': Timestamp.now(),
+      });
+
+      transaction.update(playerRef, {
+        'cardsCount': newCardsCount,
+      });
+    });
+  }
+
+  /// Advance the turn without changing the word (e.g. when 3 mistakes reached).
+  Future<void> advanceTurn({
+    required String roomId,
+    required String nextTurnPlayerId,
+  }) async {
+    await _rooms.doc(roomId).update({
+      'currentTurn': nextTurnPlayerId,
+      'turnStartedAt': Timestamp.now(),
+    });
+  }
+
+  /// Mark the current player as lost and advance to the next player.
+  Future<void> loseAndAdvanceTurn({
+    required String roomId,
+    required String playerId,
+    required int newCardsCount,
+    required String nextTurnPlayerId,
+  }) async {
+    final roomRef = _rooms.doc(roomId);
+    final playerRef = _players(roomId).doc(playerId);
+
+    await _firestore.runTransaction((transaction) async {
+      transaction.update(playerRef, {
+        'status': 'lost',
+        'cardsCount': newCardsCount,
+      });
+      transaction.update(roomRef, {
+        'currentTurn': nextTurnPlayerId,
+        'turnStartedAt': Timestamp.now(),
+      });
+    });
+  }
+
+  /// Draw a card: update player cardsCount and advance turn.
+  Future<void> drawCard({
+    required String roomId,
+    required String playerId,
+    required int newCardsCount,
+    required String nextTurnPlayerId,
+  }) async {
+    final roomRef = _rooms.doc(roomId);
+    final playerRef = _players(roomId).doc(playerId);
+
+    await _firestore.runTransaction((transaction) async {
+      transaction.update(playerRef, {
+        'cardsCount': newCardsCount,
+      });
+      transaction.update(roomRef, {
+        'currentTurn': nextTurnPlayerId,
+        'turnStartedAt': Timestamp.now(),
+      });
+    });
+  }
 }

@@ -63,10 +63,66 @@ class GameEngine {
     _dictionary = Set.from(jsonDecode(jsonStr));
   }
 
+  /// Draw one card respecting the max-2-per-letter rule.
+  /// Returns null if no valid letter can be drawn (shouldn't happen in practice).
+  String? drawCard(List<String> currentHand, {int maxRepeats = 2, Random? random}) {
+    final rng = random ?? Random();
+    final counts = <String, int>{};
+    for (final l in currentHand) {
+      counts[l] = (counts[l] ?? 0) + 1;
+    }
+
+    // Build list of letters still available
+    final available = letterPool.where((l) => (counts[l] ?? 0) < maxRepeats).toList();
+    if (available.isEmpty) return null;
+
+    return available[rng.nextInt(available.length)];
+  }
+
   bool isValidWord(String word) {
     if (word.isEmpty) {
       return false;
     }
     return _dictionary.contains(word);
   }
+
+  /// Attempt to replace a letter in the current word.
+  /// Returns a [PlayResult] with the new word and whether it's valid.
+  PlayResult tryPlay({
+    required String currentWord,
+    required int wordIndex,
+    required String newLetter,
+  }) {
+    final letters = currentWord.split('');
+    if (wordIndex < 0 || wordIndex >= letters.length) {
+      return PlayResult(
+        newWord: currentWord,
+        replacedLetter: '',
+        isValid: false,
+      );
+    }
+
+    final replacedLetter = letters[wordIndex];
+    letters[wordIndex] = newLetter;
+    final newWord = letters.join();
+    final valid = isValidWord(newWord);
+
+    return PlayResult(
+      newWord: newWord,
+      replacedLetter: replacedLetter,
+      isValid: valid,
+    );
+  }
+}
+
+class PlayResult {
+  final String newWord;
+  final String replacedLetter;
+  final bool isValid;
+
+  const PlayResult({
+    required this.newWord,
+    required this.replacedLetter,
+    required this.isValid,
+  });
 }

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'widgets/player_side.dart';
 import 'widgets/word_cards.dart';
 import 'widgets/player_hand.dart';
 import 'widgets/player_info_bar.dart';
+import 'widgets/opponent_card.dart';
 import '../../../core/theming/app_theme.dart';
 import '../../../core/widgets/responsive_content.dart';
-import '../../../core/models/player.dart';
 import '../../../core/helpers/logger.dart';
 import '../logic/room_controller.dart';
 
@@ -74,6 +73,9 @@ class _RoomScreenState extends State<RoomScreen> {
       final currentWord = controller.currentWordLetters;
       final timerText = controller.timerText;
       final userHand = controller.localHand;
+      final isMyTurn = controller.isMyTurn;
+      final selectedIdx = controller.selectedHandIndex.value;
+      final flashColor = controller.wordFlashColor.value;
 
       return Scaffold(
         body: SafeArea(
@@ -87,51 +89,69 @@ class _RoomScreenState extends State<RoomScreen> {
                 final handCardSize = (56 * unit).clamp(44.0, 68.0);
                 final handCardGap = (8 * unit).clamp(6.0, 12.0);
 
-                Widget buildPlayerChip(Player player) {
-                  return Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12 * unit,
-                      vertical: 6 * unit,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.cardDark,
-                      borderRadius: BorderRadius.circular(18 * unit),
-                      border: Border.all(
-                        color: AppTheme.primaryTeal.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Text(
-                      player.name.isNotEmpty ? player.name : 'لاعب',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  );
+                // Smart player positioning
+                var topPlayer = otherPlayers.isNotEmpty ? otherPlayers[0] : null;
+                var rightPlayer = otherPlayers.length > 1 ? otherPlayers[0] : null;
+                var leftPlayer = otherPlayers.length > 1 ? otherPlayers[1] : null;
+
+                // For 2 total players (1 opponent): show top only
+                // For 3+ total players (2+ opponents): show right, top, left
+                if (otherPlayers.length == 1) {
+                  topPlayer = otherPlayers[0];
+                  rightPlayer = null;
+                  leftPlayer = null;
+                } else if (otherPlayers.length >= 2) {
+                  rightPlayer = otherPlayers[0];
+                  topPlayer = otherPlayers[1];
+                  leftPlayer = otherPlayers.length > 2 ? otherPlayers[2] : null;
                 }
 
                 return Stack(
                   children: [
-                    // Top players list (right-to-left by join time)
-                    if (otherPlayers.isNotEmpty)
+                    // RIGHT: First opponent (3+ players)
+                    if (rightPlayer != null)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Padding(
+                          padding: EdgeInsets.only(right: 8 * unit),
+                          child: SingleChildScrollView(
+                            child: OpponentCard(
+                              player: rightPlayer,
+                              unit: unit,
+                              isVertical: true,
+                              isCurrentTurn: controller.room.value?.currentTurn == rightPlayer.id,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // TOP: Second opponent (2 or 3+ players)
+                    if (topPlayer != null)
                       Align(
                         alignment: Alignment.topCenter,
                         child: Padding(
-                          padding: EdgeInsets.only(top: 12 * unit),
-                          child: Directionality(
-                            textDirection: TextDirection.rtl,
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: [
-                                  for (
-                                    int i = 0;
-                                    i < otherPlayers.length;
-                                    i++
-                                  ) ...[
-                                    buildPlayerChip(otherPlayers[i]),
-                                    if (i != otherPlayers.length - 1)
-                                      SizedBox(width: 8 * unit),
-                                  ],
-                                ],
-                              ),
+                          padding: EdgeInsets.only(top: 8 * unit),
+                          child: OpponentCard(
+                            player: topPlayer,
+                            unit: unit,
+                            isVertical: false,
+                            isCurrentTurn: controller.room.value?.currentTurn == topPlayer.id,
+                          ),
+                        ),
+                      ),
+
+                    // LEFT: Third opponent (3+ players)
+                    if (leftPlayer != null)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 8 * unit),
+                          child: SingleChildScrollView(
+                            child: OpponentCard(
+                              player: leftPlayer,
+                              unit: unit,
+                              isVertical: true,
+                              isCurrentTurn: controller.room.value?.currentTurn == leftPlayer.id,
                             ),
                           ),
                         ),
@@ -187,13 +207,20 @@ class _RoomScreenState extends State<RoomScreen> {
                             cardSize: wordCardSize,
                             gap: wordCardGap,
                             radius: (16 * unit).clamp(12.0, 20.0),
+                            flashColor: flashColor,
+                            onCardTap: isMyTurn && selectedIdx != null
+                                ? (wordIndex) =>
+                                    controller.playOnWordCard(wordIndex)
+                                : null,
                           ),
                           SizedBox(height: 12 * unit),
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               OutlinedButton(
-                                onPressed: () {},
+                                onPressed: isMyTurn && !controller.isPlaying.value
+                                    ? () => controller.drawCard()
+                                    : null,
                                 child: const Text('سحب'),
                               ),
                               SizedBox(width: 12 * unit),
@@ -243,6 +270,7 @@ class _RoomScreenState extends State<RoomScreen> {
                                 Get.snackbar('الدردشة', 'زر الدردشة');
                               },
                               scale: unit,
+                              isMyTurn: isMyTurn,
                             ),
                             SizedBox(height: 12 * unit),
                             PlayerHand(
@@ -251,6 +279,12 @@ class _RoomScreenState extends State<RoomScreen> {
                               height: (80 * unit).clamp(60.0, 96.0),
                               gap: handCardGap,
                               radius: (12 * unit).clamp(10.0, 16.0),
+                              selectedIndex: isMyTurn ? selectedIdx : null,
+                              onCardTap: isMyTurn
+                                  ? (index) =>
+                                      controller.selectHandCard(index)
+                                  : null,
+                              isLost: controller.isLost,
                             ),
                           ],
                         ),
