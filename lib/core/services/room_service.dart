@@ -56,6 +56,8 @@ class RoomService {
         'maxPlayers': resolvedMaxPlayers,
         'playerCount': 1,
         'playerIds': [user.uid],
+        'wordCount': 0,
+        'winnerIds': [],
         'winnerId': null,
         'createdAt': Timestamp.now(),
         'finishedAt': null,
@@ -235,6 +237,8 @@ class RoomService {
         'status': 'playing',
         'currentTurn': firstPlayerId,
         'currentWord': currentWord.isNotEmpty ? currentWord : 'كتب',
+        'wordCount': 0,
+        'winnerIds': [],
         'winnerId': null,
         'finishedAt': null,
       });
@@ -250,6 +254,8 @@ class RoomService {
       'status': 'waiting',
       'currentWord': 'كتب',
       'currentTurn': '',
+      'wordCount': 0,
+      'winnerIds': [],
       'winnerId': null,
       'finishedAt': null,
     });
@@ -279,6 +285,7 @@ class RoomService {
     batch.update(_rooms.doc(roomId), {
       'status': 'finished',
       'winnerId': winnerId,
+      'winnerIds': [winnerId],
       'currentWord': winningWord,
       'currentTurn': '',
       'finishedAt': Timestamp.now(),
@@ -336,6 +343,8 @@ class RoomService {
         roomUpdates['status'] = 'waiting';
         roomUpdates['currentWord'] = 'كتب';
         roomUpdates['currentTurn'] = '';
+        roomUpdates['wordCount'] = 0;
+        roomUpdates['winnerIds'] = [];
         roomUpdates['winnerId'] = null;
         roomUpdates['finishedAt'] = null;
         
@@ -406,12 +415,47 @@ class RoomService {
         'currentWord': newWord,
         'currentTurn': nextTurnPlayerId,
         'turnStartedAt': Timestamp.now(),
+        'wordCount': FieldValue.increment(1),
       });
 
       transaction.update(playerRef, {
         'cardsCount': newCardsCount,
       });
     });
+  }
+
+  /// End the game when 70 correct words have been played.
+  /// Winners = active players with fewest cards (ties allowed, all get a point).
+  /// winnerIds / loserIds are computed in the controller — zero extra reads.
+  Future<void> wordLimitWin({
+    required String roomId,
+    required String newWord,
+    required List<String> winnerIds,
+    required List<String> loserIds,
+  }) async {
+    final batch = _firestore.batch();
+
+    batch.update(_rooms.doc(roomId), {
+      'status': 'finished',
+      'winnerIds': winnerIds,
+      'winnerId': winnerIds.isNotEmpty ? winnerIds.first : null,
+      'currentWord': newWord,
+      'currentTurn': '',
+      'finishedAt': Timestamp.now(),
+    });
+
+    for (final id in winnerIds) {
+      batch.update(_players(roomId).doc(id), {
+        'score': FieldValue.increment(1),
+        'status': 'playing',
+      });
+    }
+
+    for (final id in loserIds) {
+      batch.update(_players(roomId).doc(id), {'status': 'lost'});
+    }
+
+    await batch.commit();
   }
 
   /// Advance the turn without changing the word (e.g. when 3 mistakes reached).

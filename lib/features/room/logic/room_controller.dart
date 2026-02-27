@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -155,7 +156,17 @@ class RoomController extends GetxController {
     if (value == null || value.currentWord.isEmpty) {
       return const ['ك', 'ت', 'ب'];  // Default word
     }
-    return value.currentWord.split('');  // ['ك', 'ت', 'ب']
+    // Use runes to properly handle Arabic characters
+    final letters = value.currentWord.runes
+        .map((rune) => String.fromCharCode(rune))
+        .toList();
+    
+    // Log warning if not exactly 3 letters but still return what's there
+    if (letters.length != 3) {
+      logger.warning('[currentWordLetters] Invalid word length: ${letters.length}, word: ${value.currentWord}');
+    }
+    
+    return letters;
   }
 
   // Find current user in players list
@@ -301,14 +312,40 @@ class RoomController extends GetxController {
                 .toList(),
           );
         } else {
-          final nextPlayerId = _getNextPlayerId();
-          await _roomService.playCard(
-            roomId: roomId,
-            playerId: currentUserId!,
-            newWord: result.newWord,
-            newCardsCount: localHand.length,
-            nextTurnPlayerId: nextPlayerId,
-          );
+          final newWordCount = (room.value?.wordCount ?? 0) + 1;
+          if (newWordCount >= 70) {
+            // 🏁 Word limit reached — fewest cards wins
+            logger.info('[playOnWordCard] Word limit reached ($newWordCount), ending game');
+            final uid = currentUserId!;
+            final activePlayers = players.where((p) => p.status == 'playing').toList();
+            final cardCounts = activePlayers.map(
+              (p) => p.id == uid ? localHand.length : p.cardsCount,
+            );
+            final minCards = cardCounts.reduce(min);
+            final winnerIds = activePlayers
+                .where((p) => (p.id == uid ? localHand.length : p.cardsCount) == minCards)
+                .map((p) => p.id)
+                .toList();
+            final loserIds = activePlayers
+                .where((p) => (p.id == uid ? localHand.length : p.cardsCount) > minCards)
+                .map((p) => p.id)
+                .toList();
+            await _roomService.wordLimitWin(
+              roomId: roomId,
+              newWord: result.newWord,
+              winnerIds: winnerIds,
+              loserIds: loserIds,
+            );
+          } else {
+            final nextPlayerId = _getNextPlayerId();
+            await _roomService.playCard(
+              roomId: roomId,
+              playerId: currentUserId!,
+              newWord: result.newWord,
+              newCardsCount: localHand.length,
+              nextTurnPlayerId: nextPlayerId,
+            );
+          }
         }
 
         logger.info('[playOnWordCard] Firebase updated successfully');
@@ -507,7 +544,9 @@ class RoomController extends GetxController {
 
   /// Show the game-result popup.
   void _showGameResult(Room finishedRoom) {
-    final winner = finishedRoom.winnerId == currentUserId;
+    final uid = currentUserId;
+    final winner = finishedRoom.winnerId == uid ||
+        finishedRoom.winnerIds.contains(uid);
     Get.dialog(
       GameResultDialog(
         isWinner: winner,

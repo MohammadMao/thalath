@@ -94,7 +94,20 @@ class GameEngine {
     required int wordIndex,
     required String newLetter,
   }) {
-    final letters = currentWord.split('');
+    // Use runes to properly handle Arabic Unicode characters
+    final letters = currentWord.runes
+        .map((rune) => String.fromCharCode(rune))
+        .toList();
+    
+    // Validate word is exactly 3 letters
+    if (letters.length != 3) {
+      return PlayResult(
+        newWord: currentWord,
+        replacedLetter: '',
+        isValid: false,
+      );
+    }
+    
     if (wordIndex < 0 || wordIndex >= letters.length) {
       return PlayResult(
         newWord: currentWord,
@@ -106,6 +119,16 @@ class GameEngine {
     final replacedLetter = letters[wordIndex];
     letters[wordIndex] = newLetter;
     final newWord = letters.join();
+    
+    // Final validation: ensure result is exactly 3 characters
+    if (newWord.runes.length != 3) {
+      return PlayResult(
+        newWord: currentWord,
+        replacedLetter: '',
+        isValid: false,
+      );
+    }
+    
     final valid = isValidWord(newWord);
 
     return PlayResult(

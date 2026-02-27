@@ -10,6 +10,8 @@ class Room {
   final int maxPlayers;
   final int playerCount; // denormalized counter
   final List<String> playerIds; // denormalized for lobby join checks
+  final int wordCount; // number of valid plays so far
+  final List<String> winnerIds; // supports multiple winners (word-limit scenario)
   final DateTime turnStartedAt;
   final String? winnerId;
   final DateTime createdAt;
@@ -25,6 +27,8 @@ class Room {
     required this.maxPlayers,
     required this.playerCount,
     required this.playerIds,
+    required this.wordCount,
+    required this.winnerIds,
     required this.turnStartedAt,
     required this.winnerId,
     required this.createdAt,
@@ -43,6 +47,8 @@ class Room {
       maxPlayers: (data['maxPlayers'] as num?)?.toInt() ?? 4,
       playerCount: (data['playerCount'] as num?)?.toInt() ?? 0,
       playerIds: List<String>.from(data['playerIds'] as List? ?? []),
+      wordCount: (data['wordCount'] as num?)?.toInt() ?? 0,
+      winnerIds: List<String>.from(data['winnerIds'] as List? ?? []),
       turnStartedAt:
           (data['turnStartedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       winnerId: data['winnerId'] as String?,
@@ -62,6 +68,8 @@ class Room {
       'maxPlayers': maxPlayers,
       'playerCount': playerCount,
       'playerIds': playerIds,
+      'wordCount': wordCount,
+      'winnerIds': winnerIds,
       'turnStartedAt': Timestamp.fromDate(turnStartedAt),
       'winnerId': winnerId,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -79,6 +87,8 @@ class Room {
     int? maxPlayers,
     int? playerCount,
     List<String>? playerIds,
+    int? wordCount,
+    List<String>? winnerIds,
     DateTime? turnStartedAt,
     String? winnerId,
     DateTime? createdAt,
@@ -94,6 +104,8 @@ class Room {
       maxPlayers: maxPlayers ?? this.maxPlayers,
       playerCount: playerCount ?? this.playerCount,
       playerIds: playerIds ?? this.playerIds,
+      wordCount: wordCount ?? this.wordCount,
+      winnerIds: winnerIds ?? this.winnerIds,
       turnStartedAt: turnStartedAt ?? this.turnStartedAt,
       winnerId: winnerId ?? this.winnerId,
       createdAt: createdAt ?? this.createdAt,

@@ -8,6 +8,7 @@ import '../../../core/helpers/logger.dart';
 import '../../../core/widgets/responsive_content.dart';
 import 'widgets/room_card.dart';
 import 'widgets/create_room_button.dart';
+import 'widgets/user_name_edit.dart';
 import 'dialogs/create_room_dialog.dart';
 
 class LobbyScreen extends StatefulWidget {
@@ -28,6 +29,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
         title: const Text('الغرف'),
         centerTitle: true,
         elevation: 0,
+        leadingWidth: 100,
+        leading: const UserNameEdit(),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_rounded),

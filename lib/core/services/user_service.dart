@@ -84,4 +84,20 @@ class UserService extends GetxService {
       'createdAt': Timestamp.now(),
     });
   }
+
+  // Update user name in Firestore and cache it locally.
+  Future<void> updateUserName(String name) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw StateError('no-user');
+    }
+
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw StateError('empty-name');
+    }
+
+    await _users.doc(user.uid).update({'name': trimmed});
+    displayName.value = trimmed;
+  }
 }
