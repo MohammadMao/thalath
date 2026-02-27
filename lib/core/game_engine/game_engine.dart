@@ -117,6 +117,14 @@ class GameEngine {
     }
 
     final replacedLetter = letters[wordIndex];
+    if (newLetter == replacedLetter) {
+      return PlayResult(
+        newWord: currentWord,
+        replacedLetter: replacedLetter,
+        isValid: false,
+      );
+    }
+
     letters[wordIndex] = newLetter;
     final newWord = letters.join();
     

@@ -4,7 +4,10 @@ import 'widgets/word_cards.dart';
 import 'widgets/player_hand.dart';
 import 'widgets/player_info_bar.dart';
 import 'widgets/opponent_card.dart';
-import '../../../core/theming/app_theme.dart';
+import 'widgets/quit_button.dart';
+import 'widgets/round_timer.dart';
+import 'widgets/current_word_title.dart';
+import 'widgets/hand_limit_warning.dart';
 import '../../../core/widgets/responsive_content.dart';
 import '../../../core/helpers/logger.dart';
 import '../logic/room_controller.dart';
@@ -89,56 +92,9 @@ class _RoomScreenState extends State<RoomScreen> {
                 final handCardSize = (56 * unit).clamp(44.0, 68.0);
                 final handCardGap = (8 * unit).clamp(6.0, 12.0);
 
-                // Quit button (top-right)
-                final quitButton = Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: EdgeInsets.all(8 * unit),
-                    child: IconButton(
-                      icon: const Icon(Icons.exit_to_app_rounded),
-                      color: Colors.redAccent,
-                      tooltip: 'خروج',
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            backgroundColor: AppTheme.darkSurface,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            title: const Text(
-                              'خروج',
-                              textDirection: TextDirection.rtl,
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            content: const Text(
-                              'هل تريد الخروج من اللعبة؟',
-                              textDirection: TextDirection.rtl,
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(),
-                                child: const Text('إلغاء',
-                                    style: TextStyle(color: Colors.white54)),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.redAccent,
-                                  foregroundColor: Colors.white,
-                                ),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                  controller.forfeit();
-                                },
-                                child: const Text('خروج'),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                final quitButton = QuitButton(
+                  unit: unit,
+                  onConfirmQuit: controller.forfeit,
                 );
 
                 // Smart player positioning
@@ -215,45 +171,9 @@ class _RoomScreenState extends State<RoomScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 14 * unit,
-                              vertical: 6 * unit,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.cardDark,
-                              borderRadius: BorderRadius.circular(18 * unit),
-                              border: Border.all(
-                                color: AppTheme.primaryTeal.withValues(
-                                  alpha: 0.2,
-                                ),
-                              ),
-                            ),
-                            child: Text(
-                              '00:$timerText',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ),
+                          RoundTimer(unit: unit, timerText: timerText),
                           SizedBox(height: 10 * unit),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16 * unit,
-                              vertical: 6 * unit,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.cardDark,
-                              borderRadius: BorderRadius.circular(20 * unit),
-                              border: Border.all(
-                                color: AppTheme.primaryTeal.withValues(
-                                  alpha: 0.2,
-                                ),
-                              ),
-                            ),
-                            child: Text(
-                              'الكلمة الحالية',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ),
+                          CurrentWordTitle(unit: unit),
                           SizedBox(height: 16 * unit),
                           WordCards(
                             letters: currentWord,
@@ -271,7 +191,7 @@ class _RoomScreenState extends State<RoomScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               OutlinedButton(
-                                onPressed: isMyTurn && !controller.isPlaying.value
+                                onPressed: controller.isStrictMyTurn && !controller.isPlaying.value
                                     ? () => controller.drawCard()
                                     : null,
                                 child: const Text('سحب'),
@@ -301,19 +221,12 @@ class _RoomScreenState extends State<RoomScreen> {
                                 ),
                             ],
                           ),
-                          if ((controller.currentPlayer?.cardsCount ?? 0) == 22)
-                            Padding(
-                              padding: EdgeInsets.only(top: 8 * unit),
-                              child: Text(
-                                'وصلت حد الورق المسموح، السحبة الجاية خسارة :(',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 11 * unit,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
+                          HandLimitWarning(
+                            unit: unit,
+                            isVisible:
+                                (controller.currentPlayer?.cardsCount ?? 0) ==
+                                22,
+                          ),
                         ],
                       ),
                     ),

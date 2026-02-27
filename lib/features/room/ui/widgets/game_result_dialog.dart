@@ -4,6 +4,7 @@ import '../../../../core/theming/app_theme.dart';
 class GameResultDialog extends StatelessWidget {
   final bool isWinner;
   final bool isCreator;
+  final String winnerName; // Single or multiple winners joined by ' و '
   final VoidCallback? onReplay; // creator only
   final VoidCallback? onStay;  // non-creator only
   final VoidCallback onQuit;
@@ -12,6 +13,7 @@ class GameResultDialog extends StatelessWidget {
     super.key,
     required this.isWinner,
     required this.isCreator,
+    required this.winnerName,
     this.onReplay,
     this.onStay,
     required this.onQuit,
@@ -51,7 +53,32 @@ class GameResultDialog extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 8),
+            // Winner name with trophy
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              textDirection: TextDirection.rtl,
+              children: [
+                const Icon(
+                  Icons.emoji_events_rounded,
+                  size: 24,
+                  color: Colors.amber,
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    'الفائز: ${winnerName.isNotEmpty ? winnerName : 'لاعب'}',
+                    textDirection: TextDirection.rtl,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
             // Action buttons
             if (isCreator) ...[
               _fullButton(

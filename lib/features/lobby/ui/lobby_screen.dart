@@ -59,77 +59,84 @@ class _LobbyScreenState extends State<LobbyScreen> {
             padding: EdgeInsets.symmetric(horizontal: 24.w),
             child: Column(
               children: [
-              SizedBox(height: 16.h),
-              
-              // Create room button
-              CreateRoomButton(
-                onPressed: () => showCreateRoomDialog(context),
-              ),
-              
-              SizedBox(height: 24.h),
-              
-              // Rooms list
-              Expanded(
-                child: StreamBuilder<List<Room>>(
-                  stream: roomService.streamRooms(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+                SizedBox(height: 16.h),
+                
+                // Rooms list with Create button inside
+                Expanded(
+                  child: StreamBuilder<List<Room>>(
+                    stream: roomService.streamRooms(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                    if (snapshot.hasError) {
-                      logger.severe('Rooms stream error: ${snapshot.error}');
-                      return Center(
-                        child: Text(
-                          'حدث خطأ أثناء تحميل الغرف: ${snapshot.error}',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                      );
-                    }
-
-                    final rooms = snapshot.data ?? const <Room>[];
-
-                    if (rooms.isEmpty) {
-                      return Center(
-                        child: Text(
-                          'لا توجد غرف متاحة',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      );
-                    }
-
-                    return ListView.separated(
-                      itemCount: rooms.length,
-                      separatorBuilder: (context, index) =>
-                          SizedBox(height: 12.h),
-                      itemBuilder: (context, index) {
-                        final room = rooms[index];
-                        final currentUid = authService.currentUserId;
-                        final alreadyInRoom = currentUid != null &&
-                            room.playerIds.contains(currentUid);
-                        return RoomCard(
-                          roomName: room.name,
-                          currentPlayers: room.playerCount,
-                          maxPlayers: room.maxPlayers,
-                          status: room.status,
-                          canJoin: alreadyInRoom ||
-                              (room.status == 'waiting' &&
-                                  room.playerCount < room.maxPlayers),
-                          onJoin: () {
-                            Get.toNamed(
-                              '/room',
-                              arguments: {'roomId': room.id},
-                            );
-                          },
+                      if (snapshot.hasError) {
+                        logger.severe('Rooms stream error: ${snapshot.error}');
+                        return Center(
+                          child: Text(
+                            'حدث خطأ أثناء تحميل الغرف: ${snapshot.error}',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                            textAlign: TextAlign.center,
+                          ),
                         );
-                      },
-                    );
-                  },
+                      }
+
+                      final rooms = snapshot.data ?? const <Room>[];
+                      final roomCount = rooms.length;
+
+                      // Build the list view with create button at top
+                      return Column(
+                        children: [
+                          // Create room button — always enabled
+                          CreateRoomButton(
+                            onPressed: () => showCreateRoomDialog(context, currentRoomCount: roomCount),
+                          ),
+                          
+                          SizedBox(height: 24.h),
+                          
+                          if (rooms.isEmpty)
+                            Expanded(
+                              child: Center(
+                                child: Text(
+                                  'لا توجد غرف متاحة',
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                ),
+                              ),
+                            )
+                          else
+                            Expanded(
+                              child: ListView.separated(
+                                itemCount: rooms.length,
+                                separatorBuilder: (context, index) =>
+                                    SizedBox(height: 12.h),
+                                itemBuilder: (context, index) {
+                                  final room = rooms[index];
+                                  final currentUid = authService.currentUserId;
+                                  final alreadyInRoom = currentUid != null &&
+                                      room.playerIds.contains(currentUid);
+                                  return RoomCard(
+                                    roomName: room.name,
+                                    currentPlayers: room.playerCount,
+                                    maxPlayers: room.maxPlayers,
+                                    status: room.status,
+                                    canJoin: alreadyInRoom ||
+                                        (room.status == 'waiting' &&
+                                            room.playerCount < room.maxPlayers),
+                                    onJoin: () {
+                                      Get.toNamed(
+                                        '/room',
+                                        arguments: {'roomId': room.id},
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
-              ),
-              
-                SizedBox(height: 24.h),
               ],
             ),
           ),

@@ -192,7 +192,7 @@ class RoomService {
         .map((snapshot) => snapshot.docs.map(ChatMessage.fromFirestore).toList());
   }
 
-  // Start game: set status to playing, assign cards, and set current turn.
+  // Start game: set status to playing, assign cards, and leave turn unclaimed.
   Future<void> startGame(String roomId) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -222,8 +222,6 @@ class RoomService {
         throw StateError('not-enough-players');
       }
 
-      final firstPlayerId = playersSnapshot.docs.first.id;
-
       for (final playerDoc in playersSnapshot.docs) {
         transaction.update(playerDoc.reference, {
           'cardsCount': 15,
@@ -235,8 +233,10 @@ class RoomService {
       final currentWord = (roomData['currentWord'] as String?) ?? '';
       transaction.update(roomRef, {
         'status': 'playing',
-        'currentTurn': firstPlayerId,
+        // Unclaimed at start: first valid play will claim turn order.
+        'currentTurn': '',
         'currentWord': currentWord.isNotEmpty ? currentWord : 'كتب',
+        'turnStartedAt': Timestamp.now(),
         'wordCount': 0,
         'winnerIds': [],
         'winnerId': null,
@@ -327,8 +327,11 @@ class RoomService {
     batch.delete(_players(roomId).doc(playerId));
 
     if (remainingPlayerIds.isEmpty) {
-      // Last player leaving — delete the room doc
-      // (sub-collection orphans are acceptable on free tier)
+      // Last player leaving — delete messages subcollection and the room doc
+      final messagesSnapshot = await _messages(roomId).get();
+      for (final doc in messagesSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
       batch.delete(_rooms.doc(roomId));
     } else {
       final roomUpdates = <String, dynamic>{
@@ -363,42 +366,6 @@ class RoomService {
     await batch.commit();
   }
 
-  // Delete a room and all its subcollections (players and messages)
-  Future<void> deleteRoom(String roomId) async {
-    final user = _auth.currentUser;
-    if (user == null) {
-      throw StateError('no-user');
-    }
-
-    final room = await getRoom(roomId);
-    if (room == null) {
-      throw StateError('room-not-found');
-    }
-
-    if (room.createdBy != user.uid) {
-      throw StateError('not-authorized');
-    }
-
-    // Delete messages subcollection
-    final messagesSnapshot = await _messages(roomId).get();
-    final messageBatch = _firestore.batch();
-    for (final doc in messagesSnapshot.docs) {
-      messageBatch.delete(doc.reference);
-    }
-    await messageBatch.commit();
-
-    // Delete players subcollection
-    final playersSnapshot = await _players(roomId).get();
-    final playersBatch = _firestore.batch();
-    for (final doc in playersSnapshot.docs) {
-      playersBatch.delete(doc.reference);
-    }
-    await playersBatch.commit();
-
-    // Delete room document
-    await _rooms.doc(roomId).delete();
-  }
-
   /// Play a card: atomically update currentWord, currentTurn, and player's cardsCount.
   Future<void> playCard({
     required String roomId,
@@ -411,6 +378,26 @@ class RoomService {
     final playerRef = _players(roomId).doc(playerId);
 
     await _firestore.runTransaction((transaction) async {
+      final roomSnapshot = await transaction.get(roomRef);
+      if (!roomSnapshot.exists) {
+        throw StateError('room-not-found');
+      }
+
+      final roomData = roomSnapshot.data() ?? <String, dynamic>{};
+      final status = roomData['status'] as String? ?? 'waiting';
+      final currentTurn = roomData['currentTurn'] as String? ?? '';
+
+      if (status != 'playing') {
+        throw StateError('room-not-playing');
+      }
+
+      // Race-safe ownership:
+      // - If currentTurn is empty => first valid move claims turn flow.
+      // - If currentTurn is set => only that player may play.
+      if (currentTurn.isNotEmpty && currentTurn != playerId) {
+        throw StateError('not-your-turn');
+      }
+
       transaction.update(roomRef, {
         'currentWord': newWord,
         'currentTurn': nextTurnPlayerId,

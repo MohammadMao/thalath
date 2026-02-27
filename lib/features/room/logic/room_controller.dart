@@ -271,6 +271,18 @@ class RoomController extends GetxController {
   bool get isMyTurn {
     final value = room.value;
     final id = currentUserId;
+    final turnIsUnclaimed = value?.currentTurn.isEmpty ?? false;
+    return value != null &&
+        id != null &&
+        (turnIsUnclaimed || value.currentTurn == id) &&
+        hasStarted &&
+        !isLost;
+  }
+
+  /// Draw/forced turn-advance actions only when turn is explicitly owned.
+  bool get isStrictMyTurn {
+    final value = room.value;
+    final id = currentUserId;
     return value != null &&
         id != null &&
         value.currentTurn == id &&
@@ -305,7 +317,9 @@ class RoomController extends GetxController {
 
     final newLetter = localHand[handIdx];
 
-    logger.info('[playOnWordCard] Attempting: letter=$newLetter at wordIndex=$wordIndex, currentWord=$currentWord');
+    logger.info(
+      '[playOnWordCard] Attempting: letter=$newLetter at wordIndex=$wordIndex, currentWord=$currentWord, currentTurn=${room.value?.currentTurn}',
+    );
 
     final result = _engine.tryPlay(
       currentWord: currentWord,
@@ -377,6 +391,10 @@ class RoomController extends GetxController {
         logger.info('[playOnWordCard] Firebase updated successfully');
       } catch (e) {
         logger.severe('[playOnWordCard] Firebase update failed: $e');
+        final msg = e.toString();
+        if (msg.contains('not-your-turn')) {
+          _showRaceLostPopup();
+        }
       } finally {
         isPlaying.value = false;
       }
@@ -389,6 +407,12 @@ class RoomController extends GetxController {
       selectedHandIndex.value = null;
 
       if (turnMistakes.value >= 3) {
+        if (room.value?.currentTurn.isEmpty ?? false) {
+          logger.info('[playOnWordCard] 3 mistakes reached before first turn claim, keeping open phase');
+          turnMistakes.value = 0;
+          return;
+        }
+
         // 3 mistakes → advance turn
         logger.info('[playOnWordCard] 3 mistakes reached, advancing turn');
         isPlaying.value = true;
@@ -424,7 +448,7 @@ class RoomController extends GetxController {
 
   /// Draw a card from the deck.
   Future<void> drawCard() async {
-    if (!isMyTurn || isPlaying.value) return;
+    if (!isStrictMyTurn || isPlaying.value) return;
 
     const loseThreshold = 22;
     final uid = currentUserId;
@@ -525,6 +549,39 @@ class RoomController extends GetxController {
     });
   }
 
+  void _showRaceLostPopup() {
+    if (Get.isDialogOpen == true) return;
+
+    Get.dialog(
+      Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.black87,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Text(
+            'سبقوك',
+            textDirection: TextDirection.rtl,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+    );
+
+    Future.delayed(const Duration(milliseconds: 900), () {
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+    });
+  }
+
   /// Replay the room (creator only). Closes dialog and resets game state.
   Future<void> replayRoom() async {
     if (Get.isDialogOpen == true) Get.back();
@@ -574,12 +631,39 @@ class RoomController extends GetxController {
   /// Show the game-result popup.
   void _showGameResult(Room finishedRoom) {
     final uid = currentUserId;
-    final winner = finishedRoom.winnerId == uid ||
+    final isCurrentUserWinner = finishedRoom.winnerId == uid ||
         finishedRoom.winnerIds.contains(uid);
+
+    // Lookup winner name(s) from existing players list — no extra reads
+    String winnerName = '';
+    if (finishedRoom.winnerIds.length > 1) {
+      // Multiple winners case (word limit)
+      final winnerNames = finishedRoom.winnerIds
+          .map((id) {
+            final p = players.firstWhere(
+              (player) => player.id == id,
+              orElse: () => null as dynamic,
+            ) as Player?;
+            return (p != null && p.name.isNotEmpty) ? p.name : 'لاعب';
+          })
+          .toList();
+      winnerName = winnerNames.join(' و ');
+    } else if (finishedRoom.winnerId != null && finishedRoom.winnerId!.isNotEmpty) {
+      // Single winner case
+      final winner = players.firstWhere(
+        (p) => p.id == finishedRoom.winnerId,
+        orElse: () => null as dynamic,
+      ) as Player?;
+      if (winner != null) {
+        winnerName = winner.name.isNotEmpty ? winner.name : 'لاعب';
+      }
+    }
+
     Get.dialog(
       GameResultDialog(
-        isWinner: winner,
+        isWinner: isCurrentUserWinner,
         isCreator: isCreator,
+        winnerName: winnerName,
         onReplay: isCreator ? replayRoom : null,
         onStay: !isCreator ? () { if (Get.isDialogOpen == true) Get.back(); } : null,
         onQuit: quitRoom,
