@@ -6,10 +6,12 @@ import 'core/theming/app_theme.dart';
 import 'core/auth/auth_service.dart';
 import 'core/services/user_service.dart';
 import 'core/services/room_service.dart';
+import 'core/services/sound_service.dart';
 import 'features/home/ui/home_screen.dart';
 import 'features/login/login_screen.dart';
 import 'features/lobby/ui/lobby_screen.dart';
 import 'features/room/ui/room_screen.dart';
+import 'features/splash/splash_screen.dart';
 
 class ThalathApp extends StatelessWidget {
   const ThalathApp({super.key});
@@ -17,9 +19,10 @@ class ThalathApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Initialize AuthService
-    final authService = Get.put(AuthService());
+    Get.put(AuthService());
     Get.put(UserService());
     Get.put(RoomService());
+    Get.put(SoundService());
 
     final view = WidgetsBinding.instance.platformDispatcher.views.first;
     final logicalSize = view.physicalSize / view.devicePixelRatio;
@@ -40,14 +43,9 @@ class ThalathApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: AppTheme.darkTheme,
           themeMode: ThemeMode.dark,
-          home: Obx(() {
-            // Check auth state and route accordingly
-            if (authService.firebaseUser.value != null) {
-              return const LobbyScreen();
-            }
-            return const HomePage();
-          }),
+          home: const SplashScreen(),
           getPages: [
+            GetPage(name: '/splash', page: () => const SplashScreen()),
             GetPage(name: '/home', page: () => const HomePage()),
             GetPage(name: '/login', page: () => const LoginScreen()),
             GetPage(

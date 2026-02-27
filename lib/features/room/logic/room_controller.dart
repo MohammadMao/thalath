@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import '../../../core/models/room.dart';
 import '../../../core/models/player.dart';
 import '../../../core/services/room_service.dart';
+import '../../../core/services/sound_service.dart';
 import '../../../core/game_engine/game_engine.dart';
 import '../../../core/helpers/logger.dart';
 import '../ui/widgets/game_result_dialog.dart';
@@ -16,6 +17,7 @@ class RoomController extends GetxController {
 
   final String roomId;
   final RoomService _roomService = Get.find<RoomService>();
+  final SoundService _soundService = Get.find<SoundService>();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GameEngine _engine = GameEngine();
 
@@ -43,6 +45,8 @@ class RoomController extends GetxController {
   String? _timerKey;
   bool _joined = false;
   bool _resultDialogShown = false;
+  String? _prevRoomStatus; // for sound triggers
+  String? _prevWord;       // for sound triggers
 
   String? get currentUserId => _auth.currentUser?.uid;
 
@@ -76,8 +80,27 @@ class RoomController extends GetxController {
 
     // Watch for game-finished / replay transitions
     _roomWorker = ever(room, (Room? r) {
+      final prevStatus = _prevRoomStatus;
+      final prevWord   = _prevWord;
+      _prevRoomStatus  = r?.status;
+      _prevWord        = r?.currentWord;
+
+      // 🔔 Game started
+      if (r?.status == 'playing' && prevStatus != 'playing') {
+        _soundService.playGameStart();
+      }
+
+      // 🃏 A valid card was played (word changed while game is running)
+      if (r?.status == 'playing' &&
+          prevWord != null &&
+          r?.currentWord != prevWord) {
+        _soundService.playCardPlay();
+      }
+
+      // 🏁 Game ended
       if (r?.status == 'finished' && !_resultDialogShown) {
         _resultDialogShown = true;
+        _soundService.playGameEnd();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (Get.isDialogOpen != true) _showGameResult(r!);
         });
@@ -221,6 +244,7 @@ class RoomController extends GetxController {
   }
 
   Future<void> startGame() async {
+    await _soundService.unlock(); // unblock web audio on first gesture
     await _roomService.startGame(roomId);
   }
 
@@ -276,6 +300,8 @@ class RoomController extends GetxController {
 
     final currentWord = room.value?.currentWord ?? '';
     if (currentWord.isEmpty) return;
+
+    _soundService.unlock(); // unblock web audio on first gesture
 
     final newLetter = localHand[handIdx];
 
@@ -404,6 +430,8 @@ class RoomController extends GetxController {
     final uid = currentUserId;
     if (uid == null) return;
 
+    _soundService.unlock(); // unblock web audio on first gesture
+
     isPlaying.value = true;
     try {
       if (localHand.length >= loseThreshold) {
@@ -418,6 +446,7 @@ class RoomController extends GetxController {
         localHand.add(drawn);
         selectedHandIndex.value = null;
         logger.info('[drawCard] Drew: $drawn, new hand size: ${localHand.length}');
+        _soundService.playCardDraw();
 
         final nextPlayerId = _getNextPlayerId();
         await _roomService.drawCard(

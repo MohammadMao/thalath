@@ -333,7 +333,7 @@ class _RoomScreenState extends State<RoomScreen> {
                             PlayerInfoBar(
                               playerName: controller.currentPlayerName,
                               onChat: () {
-                                Get.snackbar('الدردشة', 'زر الدردشة');
+                                Get.snackbar('الدردشة', 'معطلة حتى إشعار آخر :)');
                               },
                               scale: unit,
                               isMyTurn: isMyTurn,
