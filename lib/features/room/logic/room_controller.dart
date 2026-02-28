@@ -11,6 +11,7 @@ import '../../../core/services/sound_service.dart';
 import '../../../core/game_engine/game_engine.dart';
 import '../../../core/helpers/logger.dart';
 import '../ui/widgets/game_result_dialog.dart';
+import '../ui/widgets/joker_picker_dialog.dart';
 
 class RoomController extends GetxController {
   RoomController({required this.roomId});
@@ -315,10 +316,18 @@ class RoomController extends GetxController {
 
     _soundService.unlock(); // unblock web audio on first gesture
 
-    final newLetter = localHand[handIdx];
+    final rawLetter = localHand[handIdx];
+
+    // Joker card: ask the player which letter to use
+    String newLetter = rawLetter;
+    if (rawLetter == '?') {
+      final picked = await JokerPickerDialog.show();
+      if (picked == null) return; // Player cancelled — keep card selected
+      newLetter = picked;
+    }
 
     logger.info(
-      '[playOnWordCard] Attempting: letter=$newLetter at wordIndex=$wordIndex, currentWord=$currentWord, currentTurn=${room.value?.currentTurn}',
+      '[playOnWordCard] Attempting: letter=$newLetter (raw=$rawLetter) at wordIndex=$wordIndex, currentWord=$currentWord, currentTurn=${room.value?.currentTurn}',
     );
 
     final result = _engine.tryPlay(

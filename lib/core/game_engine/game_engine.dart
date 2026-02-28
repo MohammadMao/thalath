@@ -33,6 +33,7 @@ class GameEngine {
     'هـ',
     'و',
     'ي',
+    '?',
   ];
 
   List<String> generateHand({
