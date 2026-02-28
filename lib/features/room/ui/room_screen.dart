@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../core/theming/app_theme.dart';
 import 'widgets/word_cards.dart';
 import 'widgets/player_hand.dart';
 import 'widgets/player_info_bar.dart';
@@ -80,8 +81,11 @@ class _RoomScreenState extends State<RoomScreen> {
       final selectedIdx = controller.selectedHandIndex.value;
       final flashColor = controller.wordFlashColor.value;
 
-      return Scaffold(
-        body: SafeArea(
+      return Container(
+        decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
           child: ResponsiveContent(
             maxWidth: 1200,
             child: LayoutBuilder(
@@ -171,8 +175,14 @@ class _RoomScreenState extends State<RoomScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          RoundTimer(unit: unit, timerText: timerText),
-                          SizedBox(height: 10 * unit),
+                          if (controller.hasStarted && controller.timerDuration > 0) ...[  
+                            RoundTimer(
+                              unit: unit,
+                              timerText: timerText,
+                              isUrgent: controller.remainingSeconds.value <= 3,
+                            ),
+                            SizedBox(height: 10 * unit),
+                          ],
                           CurrentWordTitle(unit: unit),
                           SizedBox(height: 16 * unit),
                           WordCards(
@@ -276,6 +286,7 @@ class _RoomScreenState extends State<RoomScreen> {
               },
             ),
           ),
+        ),
         ),
       );
     });

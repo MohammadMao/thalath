@@ -152,12 +152,18 @@ class RoomController extends GetxController {
     }
   }
 
-  void _startTimer() {
+  void _startTimer(int duration) {
     _timer?.cancel();
-    remainingSeconds.value = 10;
+    if (duration <= 0) {
+      remainingSeconds.value = 0;
+      return; // No timer mode
+    }
+    remainingSeconds.value = duration;
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (remainingSeconds.value <= 0) {
+      if (remainingSeconds.value <= 1) {
+        remainingSeconds.value = 0;
         timer.cancel();
+        _onTimerExpired();
         return;
       }
       remainingSeconds.value -= 1;
@@ -167,7 +173,7 @@ class RoomController extends GetxController {
   void _syncTimer(String timerKey) {
     if (_timerKey != timerKey) {
       _timerKey = timerKey;
-      _startTimer();
+      _startTimer(room.value?.timerDuration ?? 0);
       // Reset selection and mistakes when turn changes
       selectedHandIndex.value = null;
       turnMistakes.value = 0;
@@ -243,6 +249,9 @@ class RoomController extends GetxController {
   String get timerText {
     return remainingSeconds.value.toString().padLeft(2, '0');
   }
+
+  // Timer duration from room settings (0 = no timer)
+  int get timerDuration => room.value?.timerDuration ?? 0;
 
   Future<void> startGame() async {
     await _soundService.unlock(); // unblock web audio on first gesture
@@ -547,6 +556,39 @@ class RoomController extends GetxController {
         newCardsCount: localHand.length,
         nextTurnPlayerId: nextPlayerId,
       );
+    }
+  }
+
+  /// Called when the local countdown hits zero. Only the player whose turn it is
+  /// sends the Firestore write (single writer pattern).
+  Future<void> _onTimerExpired() async {
+    if (!isStrictMyTurn || isPlaying.value) return;
+    final uid = currentUserId;
+    if (uid == null) return;
+
+    logger.info('[_onTimerExpired] Timer expired for player $uid');
+    isPlaying.value = true;
+    try {
+      final currentStreak = currentPlayer?.timeoutStreak ?? 0;
+      final newStreak = currentStreak + 1;
+
+      if (newStreak >= 5) {
+        logger.info('[_onTimerExpired] Player $uid reached 5 timeouts — marking as lost');
+        await _resignAndCheck(uid);
+      } else {
+        logger.info('[_onTimerExpired] Advancing turn (streak: $newStreak)');
+        final nextPlayerId = _getNextPlayerId();
+        await _roomService.timeoutAdvanceTurn(
+          roomId: roomId,
+          playerId: uid,
+          newTimeoutStreak: newStreak,
+          nextTurnPlayerId: nextPlayerId,
+        );
+      }
+    } catch (e) {
+      logger.severe('[_onTimerExpired] Failed: $e');
+    } finally {
+      isPlaying.value = false;
     }
   }
 

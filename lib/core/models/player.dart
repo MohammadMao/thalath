@@ -9,6 +9,7 @@ class Player {
   final int mistakes;
   final int score;
   final DateTime joinedAt;
+  final int timeoutStreak; // consecutive turns ended by timeout
 
   Player({
     required this.id,
@@ -19,6 +20,7 @@ class Player {
     required this.mistakes,
     required this.score,
     required this.joinedAt,
+    this.timeoutStreak = 0,
   });
 
   factory Player.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -33,6 +35,7 @@ class Player {
       score: (data['score'] as num?)?.toInt() ?? 0,
       joinedAt:
           (data['joinedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      timeoutStreak: (data['timeoutStreak'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -45,6 +48,7 @@ class Player {
       'mistakes': mistakes,
       'score': score,
       'joinedAt': Timestamp.fromDate(joinedAt),
+      'timeoutStreak': timeoutStreak,
     };
   }
 
@@ -57,6 +61,7 @@ class Player {
     int? mistakes,
     int? score,
     DateTime? joinedAt,
+    int? timeoutStreak,
   }) {
     return Player(
       id: id ?? this.id,
@@ -67,6 +72,7 @@ class Player {
       mistakes: mistakes ?? this.mistakes,
       score: score ?? this.score,
       joinedAt: joinedAt ?? this.joinedAt,
+      timeoutStreak: timeoutStreak ?? this.timeoutStreak,
     );
   }
 }

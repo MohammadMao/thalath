@@ -9,6 +9,7 @@ Future<void> showCreateRoomDialog(BuildContext context, {int currentRoomCount = 
   final roomService = Get.find<RoomService>();
   String roomName = 'غرفة';
   int maxPlayers = 4;
+  int timerDuration = 10; // 0, 10, or 15
   bool isLoading = false;
   final bool atLimit = currentRoomCount >= _roomLimit;
 
@@ -54,22 +55,114 @@ Future<void> showCreateRoomDialog(BuildContext context, {int currentRoomCount = 
                   },
                 ),
                 SizedBox(height: 16.h),
-                DropdownButtonFormField<int>(
-                  value: maxPlayers,
-                  decoration: InputDecoration(
-                    labelText: 'عدد اللاعبين',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                // Timer duration selector
+                Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'مدة الدور',
+                        style: TextStyle(fontSize: 13, color: Colors.white60),
+                      ),
+                      SizedBox(height: 8.h),
+                      Row(
+                        children: [
+                          for (final option in [
+                            (label: '10 ث', value: 10),
+                            (label: '15 ث', value: 15),
+                            (label: 'بدون', value: 0),
+                          ]) ...[  
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => timerDuration = option.value),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: timerDuration == option.value
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: timerDuration == option.value
+                                          ? Theme.of(context).colorScheme.primary
+                                          : Colors.white24,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      option.label,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: timerDuration == option.value
+                                            ? Colors.white
+                                            : Colors.white60,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
-                  items: [2, 3, 4]
-                      .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      maxPlayers = value;
-                    }
-                  },
+                ),
+                SizedBox(height: 16.h),
+                // Player count selector
+                Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'عدد اللاعبين',
+                        style: TextStyle(fontSize: 13, color: Colors.white60),
+                      ),
+                      SizedBox(height: 8.h),
+                      Row(
+                        children: [
+                          for (final option in [2, 3, 4]) ...[
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => maxPlayers = option),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: maxPlayers == option
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: maxPlayers == option
+                                          ? Theme.of(context).colorScheme.primary
+                                          : Colors.white24,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '$option',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: maxPlayers == option
+                                            ? Colors.white
+                                            : Colors.white60,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
           ],
@@ -88,6 +181,7 @@ Future<void> showCreateRoomDialog(BuildContext context, {int currentRoomCount = 
                       final roomId = await roomService.createRoom(
                         name: roomName,
                         maxPlayers: maxPlayers,
+                        timerDuration: timerDuration,
                       );
                       if (context.mounted) {
                         Navigator.pop(context);

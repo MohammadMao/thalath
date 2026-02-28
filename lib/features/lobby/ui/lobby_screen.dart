@@ -5,6 +5,7 @@ import '../../../core/models/models.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/services/room_service.dart';
 import '../../../core/helpers/logger.dart';
+import '../../../core/theming/app_theme.dart';
 import '../../../core/widgets/responsive_content.dart';
 import 'widgets/room_card.dart';
 import 'widgets/create_room_button.dart';
@@ -24,10 +25,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
     final authService = Get.find<AuthService>();
     final roomService = Get.find<RoomService>();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('الغرف'),
-        centerTitle: true,
+    return Container(
+      decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          title: const Text('الغرف'),
+          centerTitle: true,
         elevation: 0,
         leadingWidth: 100,
         leading: const UserNameEdit(),
@@ -140,6 +145,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

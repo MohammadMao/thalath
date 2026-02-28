@@ -16,6 +16,17 @@ class AppTheme {
   // Text colors
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFB8BFD8);
+
+  // Screen background gradient
+  static const LinearGradient backgroundGradient = LinearGradient(
+    colors: [
+      Color(0xFF0F2027),
+      Color.fromARGB(255, 37, 75, 91),
+      Color(0xFF203A43),
+    ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
   
   static ThemeData get darkTheme {
     return ThemeData(

@@ -26,7 +26,7 @@ class RoomService {
 
 
   // Create a room and add the creator as the first player.
-  Future<String> createRoom({String? name, int? maxPlayers}) async {
+  Future<String> createRoom({String? name, int? maxPlayers, int timerDuration = 10}) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw StateError('no-user');
@@ -61,6 +61,7 @@ class RoomService {
         'winnerId': null,
         'createdAt': Timestamp.now(),
         'finishedAt': null,
+        'timerDuration': timerDuration,
       });
 
       transaction.set(roomDoc.collection('players').doc(user.uid), {
@@ -70,6 +71,7 @@ class RoomService {
         'status': 'playing',
         'mistakes': 0,
         'score': 0,
+        'timeoutStreak': 0,
         'joinedAt': Timestamp.now(),
       });
 
@@ -151,6 +153,7 @@ class RoomService {
         'status': 'playing',
         'mistakes': 0,
         'score': 0,
+        'timeoutStreak': 0,
         'joinedAt': Timestamp.now(),
       });
 
@@ -407,6 +410,7 @@ class RoomService {
 
       transaction.update(playerRef, {
         'cardsCount': newCardsCount,
+        'timeoutStreak': 0, // successful play resets streak
       });
     });
   }
@@ -456,6 +460,23 @@ class RoomService {
     });
   }
 
+  /// Advance turn after a timeout: increment the player's timeoutStreak.
+  /// Caller is responsible for checking streak and calling _resignAndCheck if >= 5.
+  Future<void> timeoutAdvanceTurn({
+    required String roomId,
+    required String playerId,
+    required int newTimeoutStreak,
+    required String nextTurnPlayerId,
+  }) async {
+    final batch = _firestore.batch();
+    batch.update(_players(roomId).doc(playerId), {'timeoutStreak': newTimeoutStreak});
+    batch.update(_rooms.doc(roomId), {
+      'currentTurn': nextTurnPlayerId,
+      'turnStartedAt': Timestamp.now(),
+    });
+    await batch.commit();
+  }
+
   /// Mark the current player as lost and advance to the next player.
   Future<void> loseAndAdvanceTurn({
     required String roomId,
@@ -491,6 +512,7 @@ class RoomService {
     await _firestore.runTransaction((transaction) async {
       transaction.update(playerRef, {
         'cardsCount': newCardsCount,
+        'timeoutStreak': 0, // drawing resets streak
       });
       transaction.update(roomRef, {
         'currentTurn': nextTurnPlayerId,

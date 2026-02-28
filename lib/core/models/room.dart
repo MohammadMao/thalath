@@ -16,6 +16,7 @@ class Room {
   final String? winnerId;
   final DateTime createdAt;
   final DateTime? finishedAt;
+  final int timerDuration; // 0 = no timer, 10 or 15 seconds
 
   Room({
     required this.id,
@@ -33,6 +34,7 @@ class Room {
     required this.winnerId,
     required this.createdAt,
     required this.finishedAt,
+    this.timerDuration = 10,
   });
 
   factory Room.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -55,6 +57,7 @@ class Room {
       createdAt:
           (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       finishedAt: (data['finishedAt'] as Timestamp?)?.toDate(),
+      timerDuration: (data['timerDuration'] as num?)?.toInt() ?? 10,
     );
   }
 
@@ -74,6 +77,7 @@ class Room {
       'winnerId': winnerId,
       'createdAt': Timestamp.fromDate(createdAt),
       'finishedAt': finishedAt != null ? Timestamp.fromDate(finishedAt!) : null,
+      'timerDuration': timerDuration,
     };
   }
 
@@ -93,6 +97,7 @@ class Room {
     String? winnerId,
     DateTime? createdAt,
     DateTime? finishedAt,
+    int? timerDuration,
   }) {
     return Room(
       id: id ?? this.id,
@@ -110,6 +115,7 @@ class Room {
       winnerId: winnerId ?? this.winnerId,
       createdAt: createdAt ?? this.createdAt,
       finishedAt: finishedAt ?? this.finishedAt,
+      timerDuration: timerDuration ?? this.timerDuration,
     );
   }
 }
