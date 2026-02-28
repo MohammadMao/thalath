@@ -93,29 +93,6 @@ flutter pub get
 ```bash
 # For development
 flutter run
-
-## 📁 Project Structure
-
-```
-lib/
-├── app.dart                    # Main app configuration
-├── main.dart                   # App entry point
-├── firebase_options.dart       # Firebase configuration
-├── core/                       # Core functionality
-│   ├── auth/                   # Authentication logic
-│   ├── game_engine/            # Game rules and logic
-│   ├── helpers/                # Utility functions
-│   ├── models/                 # Data models (Room, Player)
-│   ├── services/               # Services (User, Room, Sound)
-│   ├── theming/                # App theme configuration
-│   └── widgets/                # Reusable UI components
-└── features/                   # Feature modules
-    ├── chat/                   # In-game chat
-    ├── home/                   # Home screen
-    ├── lobby/                  # Game lobby
-    ├── login/                  # Authentication screens
-    ├── room/                   # Game room/gameplay
-    └── splash/                 # Splash screen
 ```
 
 
