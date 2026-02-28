@@ -1,3 +1,6 @@
+
+<img width="100" height="100" alt="logo" src="https://github.com/user-attachments/assets/06c264c5-1a79-4343-a528-5968e15f2e14" />
+
 # Thalath (ثلاث)
 
 A real-time multiplayer Arabic word game built with Flutter and Firebase. Players take turns transforming three-letter Arabic words by replacing one letter at a time, creating a chain of valid words.
@@ -94,6 +97,14 @@ flutter pub get
 # For development
 flutter run
 ```
+
+### Preview
+<img width="250" height="500" alt="preview" src="https://github.com/user-attachments/assets/f2e9b5bc-e4f4-4bff-b634-0f50a80b6dc9" />
+<img width="250" height="500" alt="preview" src="https://github.com/user-attachments/assets/cbf7471d-b553-424f-8075-dbbaf448789a" />
+<img width="250" height="500" alt="preview" src="https://github.com/user-attachments/assets/592c0c02-ffb6-4d55-bf63-d10e88e6ec97" />
+
+<img width="250" height="500" alt="preview" src="https://github.com/user-attachments/assets/8ed4401a-90c0-4eb3-9f17-720e690d6b2a" />
+<img width="250" height="500" alt="preview" src="https://github.com/user-attachments/assets/4a047032-7e86-4fc3-8981-c530545d140f" />
 
 
 ## 📄 License
