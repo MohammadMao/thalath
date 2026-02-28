@@ -127,12 +127,15 @@ class _RoomScreenState extends State<RoomScreen> {
                         alignment: Alignment.centerRight,
                         child: Padding(
                           padding: EdgeInsets.only(right: 8 * unit),
-                          child: SingleChildScrollView(
-                            child: OpponentCard(
-                              player: rightPlayer,
-                              unit: unit,
-                              isVertical: true,
-                              isCurrentTurn: controller.room.value?.currentTurn == rightPlayer.id,
+                          child: SizedBox(
+                            width: 80 * unit,
+                            child: SingleChildScrollView(
+                              child: OpponentCard(
+                                player: rightPlayer,
+                                unit: unit,
+                                isVertical: true,
+                                isCurrentTurn: controller.room.value?.currentTurn == rightPlayer.id,
+                              ),
                             ),
                           ),
                         ),
@@ -159,12 +162,15 @@ class _RoomScreenState extends State<RoomScreen> {
                         alignment: Alignment.centerLeft,
                         child: Padding(
                           padding: EdgeInsets.only(left: 8 * unit),
-                          child: SingleChildScrollView(
-                            child: OpponentCard(
-                              player: leftPlayer,
-                              unit: unit,
-                              isVertical: true,
-                              isCurrentTurn: controller.room.value?.currentTurn == leftPlayer.id,
+                          child: SizedBox(
+                            width: 80 * unit,
+                            child: SingleChildScrollView(
+                              child: OpponentCard(
+                                player: leftPlayer,
+                                unit: unit,
+                                isVertical: true,
+                                isCurrentTurn: controller.room.value?.currentTurn == leftPlayer.id,
+                              ),
                             ),
                           ),
                         ),
@@ -234,8 +240,8 @@ class _RoomScreenState extends State<RoomScreen> {
                           HandLimitWarning(
                             unit: unit,
                             isVisible:
-                                (controller.currentPlayer?.cardsCount ?? 0) ==
-                                22,
+                                (controller.currentPlayer?.cardsCount ?? 0) >=
+                                (controller.room.value?.initialCards ?? 15) + 7,
                           ),
                         ],
                       ),

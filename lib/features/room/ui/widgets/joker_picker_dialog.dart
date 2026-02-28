@@ -41,21 +41,24 @@ class JokerPickerDialog extends StatelessWidget {
                 textDirection: TextDirection.rtl,
               ),
               const SizedBox(height: 16),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final letter in letters)
-                    GestureDetector(
-                      onTap: () => Get.back(result: letter),
-                      child: LetterCard(
-                        letter: letter,
-                        size: 44,
-                        radius: 10,
+              Directionality(
+                textDirection: TextDirection.rtl,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final letter in letters)
+                      GestureDetector(
+                        onTap: () => Get.back(result: letter),
+                        child: LetterCard(
+                          letter: letter,
+                          size: 44,
+                          radius: 10,
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
               SizedBox(

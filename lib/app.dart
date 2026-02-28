@@ -38,30 +38,34 @@ class ThalathApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return GetMaterialApp(
-          title: 'Thalath - ثلاث',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.darkTheme,
-          themeMode: ThemeMode.dark,
-          home: const SplashScreen(),
-          getPages: [
-            GetPage(name: '/splash', page: () => const SplashScreen()),
-            GetPage(name: '/home', page: () => const HomePage()),
-            GetPage(name: '/login', page: () => const LoginScreen()),
-            GetPage(
-              name: '/lobby',
-              page: () => const LobbyScreen(),
-              middlewares: [AuthMiddleware()],
-            ),
-            GetPage(
-              name: '/room',
-              page: () {
-                final args = Get.arguments as Map<String, dynamic>;
-                return RoomScreen(roomId: args['roomId']);
-              },
-              middlewares: [AuthMiddleware()],
-            ),
-          ],
+        return Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => Get.find<SoundService>().unlock(),
+          child: GetMaterialApp(
+            title: 'Thalath - ثلاث',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.darkTheme,
+            themeMode: ThemeMode.dark,
+            home: const SplashScreen(),
+            getPages: [
+              GetPage(name: '/splash', page: () => const SplashScreen()),
+              GetPage(name: '/home', page: () => const HomePage()),
+              GetPage(name: '/login', page: () => const LoginScreen()),
+              GetPage(
+                name: '/lobby',
+                page: () => const LobbyScreen(),
+                middlewares: [AuthMiddleware()],
+              ),
+              GetPage(
+                name: '/room',
+                page: () {
+                  final args = Get.arguments as Map<String, dynamic>;
+                  return RoomScreen(roomId: args['roomId']);
+                },
+                middlewares: [AuthMiddleware()],
+              ),
+            ],
+          ),
         );
       },
     );

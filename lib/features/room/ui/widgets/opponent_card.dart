@@ -42,37 +42,34 @@ class OpponentCard extends StatelessWidget {
       Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (isCurrentTurn) ...
-            [
-              Container(
+          Visibility(
+            visible: isCurrentTurn || player.status == 'lost',
+            maintainSize: true,
+            maintainAnimation: true,
+            maintainState: true,
+            child: Padding(
+              padding: EdgeInsets.only(right: 4 * unit),
+              child: Container(
                 width: 8 * unit,
                 height: 8 * unit,
                 decoration: BoxDecoration(
-                  color: Colors.greenAccent,
+                  color: player.status == 'lost'
+                      ? Colors.red
+                      : Colors.greenAccent,
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.greenAccent.withValues(alpha: 0.7),
-                      blurRadius: 6 * unit,
-                      spreadRadius: 2 * unit,
-                    ),
-                  ],
+                  boxShadow: isCurrentTurn && player.status != 'lost'
+                      ? [
+                          BoxShadow(
+                            color: Colors.greenAccent.withValues(alpha: 0.7),
+                            blurRadius: 6 * unit,
+                            spreadRadius: 2 * unit,
+                          ),
+                        ]
+                      : null,
                 ),
               ),
-              SizedBox(width: 4 * unit),
-            ],
-          if (player.status == 'lost') ...
-            [
-              Container(
-                width: 8 * unit,
-                height: 8 * unit,
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              SizedBox(width: 4 * unit),
-            ],
+            ),
+          ),
           Text(
             player.name.isNotEmpty ? player.name : 'لاعب',
             style: Theme.of(context).textTheme.bodySmall,

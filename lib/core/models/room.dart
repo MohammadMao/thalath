@@ -17,6 +17,7 @@ class Room {
   final DateTime createdAt;
   final DateTime? finishedAt;
   final int timerDuration; // 0 = no timer, 10 or 15 seconds
+  final int initialCards; // 10 or 15 cards at game start
 
   Room({
     required this.id,
@@ -35,6 +36,7 @@ class Room {
     required this.createdAt,
     required this.finishedAt,
     this.timerDuration = 10,
+    this.initialCards = 15,
   });
 
   factory Room.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -58,6 +60,7 @@ class Room {
           (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       finishedAt: (data['finishedAt'] as Timestamp?)?.toDate(),
       timerDuration: (data['timerDuration'] as num?)?.toInt() ?? 10,
+      initialCards: (data['initialCards'] as num?)?.toInt() ?? 15,
     );
   }
 
@@ -78,6 +81,7 @@ class Room {
       'createdAt': Timestamp.fromDate(createdAt),
       'finishedAt': finishedAt != null ? Timestamp.fromDate(finishedAt!) : null,
       'timerDuration': timerDuration,
+      'initialCards': initialCards,
     };
   }
 
@@ -98,6 +102,7 @@ class Room {
     DateTime? createdAt,
     DateTime? finishedAt,
     int? timerDuration,
+    int? initialCards,
   }) {
     return Room(
       id: id ?? this.id,
@@ -116,6 +121,7 @@ class Room {
       createdAt: createdAt ?? this.createdAt,
       finishedAt: finishedAt ?? this.finishedAt,
       timerDuration: timerDuration ?? this.timerDuration,
+      initialCards: initialCards ?? this.initialCards,
     );
   }
 }

@@ -26,7 +26,7 @@ class RoomService {
 
 
   // Create a room and add the creator as the first player.
-  Future<String> createRoom({String? name, int? maxPlayers, int timerDuration = 10}) async {
+  Future<String> createRoom({String? name, int? maxPlayers, int timerDuration = 10, int initialCards = 15}) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw StateError('no-user');
@@ -62,6 +62,7 @@ class RoomService {
         'createdAt': Timestamp.now(),
         'finishedAt': null,
         'timerDuration': timerDuration,
+        'initialCards': initialCards,
       });
 
       transaction.set(roomDoc.collection('players').doc(user.uid), {
@@ -225,9 +226,11 @@ class RoomService {
         throw StateError('not-enough-players');
       }
 
+      final gameInitialCards = (roomData['initialCards'] as num?)?.toInt() ?? 15;
+
       for (final playerDoc in playersSnapshot.docs) {
         transaction.update(playerDoc.reference, {
-          'cardsCount': 15,
+          'cardsCount': gameInitialCards,
           'status': 'playing',
           'mistakes': 0,
         });

@@ -10,6 +10,7 @@ Future<void> showCreateRoomDialog(BuildContext context, {int currentRoomCount = 
   String roomName = 'غرفة';
   int maxPlayers = 4;
   int timerDuration = 10; // 0, 10, or 15
+  int initialCards = 15; // 10 or 15
   bool isLoading = false;
   final bool atLimit = currentRoomCount >= _roomLimit;
 
@@ -112,6 +113,59 @@ Future<void> showCreateRoomDialog(BuildContext context, {int currentRoomCount = 
                   ),
                 ),
                 SizedBox(height: 16.h),
+                // Initial cards selector
+                Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'عدد الورق المبدئي',
+                        style: TextStyle(fontSize: 13, color: Colors.white60),
+                      ),
+                      SizedBox(height: 8.h),
+                      Row(
+                        children: [
+                          for (final option in [15, 10]) ...[
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => initialCards = option),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: initialCards == option
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: initialCards == option
+                                          ? Theme.of(context).colorScheme.primary
+                                          : Colors.white24,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '$option',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: initialCards == option
+                                            ? Colors.white
+                                            : Colors.white60,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16.h),
                 // Player count selector
                 Directionality(
                   textDirection: TextDirection.rtl,
@@ -182,6 +236,7 @@ Future<void> showCreateRoomDialog(BuildContext context, {int currentRoomCount = 
                         name: roomName,
                         maxPlayers: maxPlayers,
                         timerDuration: timerDuration,
+                        initialCards: initialCards,
                       );
                       if (context.mounted) {
                         Navigator.pop(context);

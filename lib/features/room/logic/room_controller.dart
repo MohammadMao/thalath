@@ -152,13 +152,27 @@ class RoomController extends GetxController {
     }
   }
 
-  void _startTimer(int duration) {
+  void _startTimer(int duration, DateTime turnStartedAt) {
     _timer?.cancel();
     if (duration <= 0) {
       remainingSeconds.value = 0;
       return; // No timer mode
     }
-    remainingSeconds.value = duration;
+    // Compute how much time has already elapsed since the turn started.
+    // This makes the timer resilient to reconnects and screen re-entries:
+    // a player rejoining mid-turn sees the correct remaining time without
+    // any extra Firestore reads or writes.
+    final elapsed = DateTime.now().difference(turnStartedAt).inSeconds.clamp(0, duration);
+    final remaining = duration - elapsed;
+
+    if (remaining <= 0) {
+      remainingSeconds.value = 0;
+      // Turn already expired — fire immediately (only if it's our turn)
+      _onTimerExpired();
+      return;
+    }
+
+    remainingSeconds.value = remaining;
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (remainingSeconds.value <= 1) {
         remainingSeconds.value = 0;
@@ -173,7 +187,8 @@ class RoomController extends GetxController {
   void _syncTimer(String timerKey) {
     if (_timerKey != timerKey) {
       _timerKey = timerKey;
-      _startTimer(room.value?.timerDuration ?? 0);
+      final r = room.value;
+      _startTimer(r?.timerDuration ?? 0, r?.turnStartedAt ?? DateTime.now());
       // Reset selection and mistakes when turn changes
       selectedHandIndex.value = null;
       turnMistakes.value = 0;
@@ -267,7 +282,8 @@ class RoomController extends GetxController {
       logger.info('[_ensureLocalHand] hand already exists, skipping');
       return;
     }
-    final newHand = _engine.generateHand();
+    final roomInitialCards = room.value?.initialCards ?? 15;
+    final newHand = _engine.generateHand(size: roomInitialCards);
     logger.info('[_ensureLocalHand] generated hand with ${newHand.length} cards');
     localHand.assignAll(newHand);
   }
@@ -468,7 +484,8 @@ class RoomController extends GetxController {
   Future<void> drawCard() async {
     if (!isStrictMyTurn || isPlaying.value) return;
 
-    const loseThreshold = 22;
+    final roomInitialCards = room.value?.initialCards ?? 15;
+    final loseThreshold = roomInitialCards + 7;
     final uid = currentUserId;
     if (uid == null) return;
 

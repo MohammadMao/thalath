@@ -1,5 +1,5 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../../core/auth/auth_service.dart';
 import '../../core/services/sound_service.dart';
@@ -27,10 +27,7 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 1200),
     );
 
-    _fadeAnim = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeIn,
-    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
 
     _scaleAnim = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
@@ -38,8 +35,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animController.forward();
 
-    // Play the open sound
-    Get.find<SoundService>().playGameOpen();
+    // Play the open sound (web blocks autoplay until a user gesture)
+    if (!kIsWeb) {
+      Get.find<SoundService>().playGameOpen();
+    }
 
     // Navigate after splash duration
     Future.delayed(const Duration(milliseconds: 2400), _navigate);
@@ -110,21 +109,21 @@ class _SplashScreenState extends State<SplashScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // App logo
-                    SvgPicture.asset(
-                      'assets/images/logo.svg',
+                    Image.asset(
+                      'assets/images/logo.png',
                       width: 160,
                       height: 160,
                     ),
                     const SizedBox(height: 24),
                     // Subtitle
-                    Text(
-                      'اختبر مفرداتك العربية!',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: AppTheme.textSecondary.withValues(alpha: 0.75),
-                        letterSpacing: 1,
-                      ),
-                    ),
+                    // Text(
+                    //   'اختبر مفرداتك العربية!',
+                    //   style: TextStyle(
+                    //     fontSize: 15,
+                    //     color: AppTheme.textSecondary.withValues(alpha: 0.75),
+                    //     letterSpacing: 1,
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
