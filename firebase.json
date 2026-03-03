@@ -1,16 +1,39 @@
 {
-  "hosting": {
-    "public": "build/web",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
-  }
+    "hosting": {
+        "public": "build/web",
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ],
+        "rewrites": [
+            {
+                "source": "**",
+                "destination": "/index.html"
+            }
+        ]
+    },
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "thalath-a0d8d",
+                    "appId": "1:671695722424:android:88d9bfed73aa0934faa14d",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "thalath-a0d8d",
+                    "configurations": {
+                        "android": "1:671695722424:android:88d9bfed73aa0934faa14d",
+                        "ios": "1:671695722424:ios:af0d8bc0cee065bffaa14d",
+                        "macos": "1:671695722424:ios:af0d8bc0cee065bffaa14d",
+                        "web": "1:671695722424:web:f29a8db03258f07dfaa14d",
+                        "windows": "1:671695722424:web:93023aaa20664f77faa14d"
+                    }
+                }
+            }
+        }
+    }
 }

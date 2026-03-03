@@ -41,8 +41,8 @@ class HomePage extends StatelessWidget {
                 // Feature cards
                 const FeatureCard(
                   icon: Icons.people_rounded,
-                  title: '2-4 لاعبين',
-                  description: 'لعب جماعي',
+                  title: 'لعب جماعي',
+                  // description: '2-4 لاعبين',
                 ),
                 
                 SizedBox(height: 12.h),
@@ -50,7 +50,7 @@ class HomePage extends StatelessWidget {
                 const FeatureCard(
                   icon: Icons.timer_rounded,
                   title: 'جولات سريعة',
-                  description: 'الدور 10 ثواني فقط',
+                  // description: 'الدور 10 ثواني فقط',
                 ),
                 
                 SizedBox(height: 12.h),
@@ -58,7 +58,7 @@ class HomePage extends StatelessWidget {
                 const FeatureCard(
                   icon: Icons.chat_bubble_rounded,
                   title: 'غرف دردشة',
-                  description: 'العب ودردش',
+                  // description: 'العب ودردش',
                 ),
                 
                   SizedBox(height: 40.h),

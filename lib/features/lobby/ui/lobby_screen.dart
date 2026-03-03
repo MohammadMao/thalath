@@ -11,6 +11,7 @@ import 'widgets/room_card.dart';
 import 'widgets/create_room_button.dart';
 import 'widgets/user_name_edit.dart';
 import 'dialogs/create_room_dialog.dart';
+import 'widgets/rules_dialog.dart';
 
 class LobbyScreen extends StatefulWidget {
   const LobbyScreen({super.key});
@@ -37,6 +38,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
         leadingWidth: 100,
         leading: const UserNameEdit(),
         actions: [
+          TextButton.icon(
+            icon: const Icon(Icons.menu_book_rounded, size: 18),
+            label: const Text('القواعد'),
+            onPressed: () => showRulesDialog(context),
+            style: TextButton.styleFrom(foregroundColor: Colors.white70),
+          ),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
             onPressed: () async {

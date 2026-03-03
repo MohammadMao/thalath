@@ -5,13 +5,13 @@ import '../../../../core/theming/app_theme.dart';
 class FeatureCard extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String description;
+  final String? description;
 
   const FeatureCard({
     super.key,
     required this.icon,
     required this.title,
-    required this.description,
+    this.description,
   });
 
   @override
@@ -59,8 +59,9 @@ class FeatureCard extends StatelessWidget {
                   textDirection: TextDirection.rtl,
                 ),
                 SizedBox(height: 4.h),
+                if (description != null)
                 Text(
-                  description,
+                  description!,
                   style: Theme.of(context).textTheme.bodySmall,
                   textDirection: TextDirection.rtl,
                 ),
